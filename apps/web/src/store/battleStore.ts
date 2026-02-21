@@ -44,11 +44,6 @@ interface BattleState {
   overclock: boolean;
   overclockEndAt: number;
 
-  // BUG BREAK system
-  lastWasError: boolean;
-  bugBreakActive: boolean;
-  bugBreakTimestamp: number;
-  nextCritGuaranteed: boolean;
 }
 
 interface BattleActions {
@@ -61,8 +56,6 @@ interface BattleActions {
   incrementCombo: () => void;
   resetCombo: () => void;
   triggerOverclock: () => void;
-  triggerBugBreak: () => void;
-  consumeGuaranteedCrit: () => boolean;
   reset: () => void;
 }
 
@@ -84,11 +77,6 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
   comboTimestamp: 0,
   overclock: false,
   overclockEndAt: 0,
-  lastWasError: false,
-  bugBreakActive: false,
-  bugBreakTimestamp: 0,
-  nextCritGuaranteed: false,
-
   spawnEncounter: (toolName: string | undefined, description: string) => {
     const def = getEnemyForTool(toolName);
     const enc: Encounter = {
@@ -186,24 +174,6 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     }, 5000);
   },
 
-  triggerBugBreak: () => {
-    const now = Date.now();
-    set({ bugBreakActive: true, bugBreakTimestamp: now, nextCritGuaranteed: true, lastWasError: false });
-    get().addBattleLog("BUG BREAK! Counter-attack SUCCESS!");
-    setTimeout(() => {
-      set({ bugBreakActive: false });
-    }, 1200);
-  },
-
-  consumeGuaranteedCrit: () => {
-    const s = get();
-    if (s.nextCritGuaranteed) {
-      set({ nextCritGuaranteed: false });
-      return true;
-    }
-    return false;
-  },
-
   reset: () => {
     set({
       encounters: [],
@@ -217,10 +187,6 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       comboTimestamp: 0,
       overclock: false,
       overclockEndAt: 0,
-      lastWasError: false,
-      bugBreakActive: false,
-      bugBreakTimestamp: 0,
-      nextCritGuaranteed: false,
     });
   },
 }));
@@ -342,18 +308,8 @@ useGameStore.subscribe((state) => {
         return baseColor;
       };
 
-      // Helper: check if this hit should be a guaranteed crit (bug break)
-      const checkBugBreakCrit = (): boolean => {
-        return battle.consumeGuaranteedCrit();
-      };
-
       switch (entry.type) {
         case "action": {
-          // Check for bug break (error → action = counter-attack)
-          if (battle.lastWasError) {
-            battle.triggerBugBreak();
-          }
-
           // Increment combo on actions
           battle.incrementCombo();
 
@@ -373,30 +329,24 @@ useGameStore.subscribe((state) => {
 
           if (/^Writing\b/i.test(entry.text)) {
             battle.spawnEncounter("write_file", entry.text);
-            const isCrit = checkBugBreakCrit();
-            const baseDmg = 5 + Math.floor(Math.random() * 8);
-            const dmg = isCrit ? baseDmg * 3 : baseDmg;
+            const dmg = 5 + Math.floor(Math.random() * 8);
             battle.triggerAgentAttack();
-            battle.addDamageNumber(String(dmg), isCrit, isCrit ? "#ff44ff" : comboColor("#ffffff"));
-            battle.addBattleLog(isCrit ? `COUNTER-CRIT! ${dmg} DAMAGE!` : `Agent strikes! ${dmg} damage!`);
+            battle.addDamageNumber(String(dmg), false, comboColor("#ffffff"));
+            battle.addBattleLog(`Agent strikes! ${dmg} damage!`);
           } else if (/^Generating code/i.test(entry.text)) {
             battle.spawnEncounter("write_file", entry.text);
-            const isCrit = checkBugBreakCrit();
-            const baseDmg = 8 + Math.floor(Math.random() * 12);
-            const dmg = isCrit ? baseDmg * 3 : baseDmg;
+            const dmg = 8 + Math.floor(Math.random() * 12);
             battle.triggerAgentAttack();
-            battle.addDamageNumber(String(dmg), isCrit, isCrit ? "#ff44ff" : comboColor("#66ccff"));
-            battle.addBattleLog(isCrit ? `COUNTER-FORGE! ${dmg} DAMAGE!` : `Agent casts FORGE! ${dmg} damage!`);
+            battle.addDamageNumber(String(dmg), false, comboColor("#66ccff"));
+            battle.addBattleLog(`Agent casts FORGE! ${dmg} damage!`);
           } else if (/^Using tool:\s*(\w+)/i.test(entry.text)) {
             const match = entry.text.match(/^Using tool:\s*(\w+)/i);
             const tool = match?.[1];
             battle.spawnEncounter(tool, entry.text);
-            const isCrit = checkBugBreakCrit();
-            const baseDmg = 3 + Math.floor(Math.random() * 5);
-            const dmg = isCrit ? baseDmg * 3 : baseDmg;
+            const dmg = 3 + Math.floor(Math.random() * 5);
             battle.triggerAgentAttack();
-            battle.addDamageNumber(String(dmg), isCrit, isCrit ? "#ff44ff" : comboColor("#ffffff"));
-            battle.addBattleLog(isCrit ? `COUNTER-STRIKE! ${dmg} DAMAGE!` : `Quick strike! ${dmg} damage!`);
+            battle.addDamageNumber(String(dmg), false, comboColor("#ffffff"));
+            battle.addBattleLog(`Quick strike! ${dmg} damage!`);
           } else if (/^Reading\b/i.test(entry.text)) {
             battle.spawnEncounter("read_file", entry.text);
             battle.addBattleLog("Agent scouts ahead...");
@@ -408,22 +358,15 @@ useGameStore.subscribe((state) => {
           break;
         }
         case "success": {
-          // Check for bug break (error → success = counter-attack)
-          if (battle.lastWasError) {
-            battle.triggerBugBreak();
-          }
-
           // Increment combo on success
           battle.incrementCombo();
 
           if (/test.*passed/i.test(entry.text)) {
             battle.defeatCurrent();
-            const isCrit = checkBugBreakCrit();
-            const baseDmg = 15 + Math.floor(Math.random() * 10);
-            const dmg = isCrit ? baseDmg * 3 : baseDmg;
+            const dmg = 15 + Math.floor(Math.random() * 10);
             battle.triggerAgentAttack();
-            battle.addDamageNumber(String(dmg), true, isCrit ? "#ff44ff" : comboColor("#ffff44"));
-            battle.addBattleLog(isCrit ? `COUNTER-CRIT!! ${dmg} MASSIVE DAMAGE!` : `CRITICAL HIT! ${dmg} damage!`);
+            battle.addDamageNumber(String(dmg), true, comboColor("#ffff44"));
+            battle.addBattleLog(`CRITICAL HIT! ${dmg} damage!`);
           } else if (/Sub-agent completed/i.test(entry.text)) {
             battle.addBattleLog("Ally completes their mission!");
           }
@@ -432,9 +375,6 @@ useGameStore.subscribe((state) => {
         case "error": {
           // Reset combo on error
           battle.resetCombo();
-          // Mark that last event was an error (for bug break detection)
-          useBattleStore.setState({ lastWasError: true });
-
           battle.triggerAgentHit();
           if (/test.*failed/i.test(entry.text)) {
             battle.addBattleLog("Enemy counterattacks!");

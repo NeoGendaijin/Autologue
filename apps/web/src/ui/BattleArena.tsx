@@ -197,8 +197,8 @@ function DefeatedMarker({ emoji, index }: { emoji: string; index: number }) {
 }
 
 // --- Active enemy being fought ---
-function ActiveEnemy({ emoji, name, color, isHit, isTaunting, isStunned }: {
-  emoji: string; name: string; color: string; isHit: boolean; isTaunting?: boolean; isStunned?: boolean;
+function ActiveEnemy({ emoji, name, color, isHit, isTaunting }: {
+  emoji: string; name: string; color: string; isHit: boolean; isTaunting?: boolean;
 }) {
   return (
     <div style={{
@@ -206,22 +206,19 @@ function ActiveEnemy({ emoji, name, color, isHit, isTaunting, isStunned }: {
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-      animation: isStunned ? "stunWobble 1.2s ease" :
-                 isHit ? "enemyHit 0.5s ease" :
+      animation: isHit ? "enemyHit 0.5s ease" :
                  isTaunting ? "taunt 2s infinite ease" :
                  "enemyIdle 2.5s infinite ease",
     }}>
       <div style={{
         fontSize: "280px",
-        filter: isStunned
-          ? "brightness(8) saturate(0)"
-          : isHit
-            ? "brightness(2) drop-shadow(0 0 24px #ff4444)"
-            : isTaunting
-              ? "drop-shadow(0 0 16px #ff444488) drop-shadow(0 0 30px #ff440044)"
-              : "drop-shadow(0 0 12px #00000088) drop-shadow(0 0 24px #ff444422)",
-        transition: "filter 0.15s",
-        animation: isStunned ? undefined : isHit ? undefined : "wobble 3s infinite ease-in-out",
+        filter: isHit
+          ? "brightness(2) drop-shadow(0 0 24px #ff4444)"
+          : isTaunting
+            ? "drop-shadow(0 0 16px #ff444488) drop-shadow(0 0 30px #ff440044)"
+            : "drop-shadow(0 0 12px #00000088) drop-shadow(0 0 24px #ff444422)",
+        transition: "filter 0.1s",
+        animation: isHit ? undefined : "wobble 3s infinite ease-in-out",
       }}>
         {emoji}
       </div>
@@ -388,7 +385,6 @@ export function BattleArena() {
   const comboCount = useBattleStore((s) => s.comboCount);
   const comboTimestamp = useBattleStore((s) => s.comboTimestamp);
   const overclock = useBattleStore((s) => s.overclock);
-  const bugBreakActive = useBattleStore((s) => s.bugBreakActive);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const subAgents = agents.filter((a) => a.id !== "main");
@@ -647,7 +643,6 @@ export function BattleArena() {
               color={active.color}
               isHit={agentAttacking}
               isTaunting={!!isQuestion}
-              isStunned={bugBreakActive}
             />
             {!isQuestion && (
               <div style={{
@@ -713,37 +708,6 @@ export function BattleArena() {
           animation: "overclockPulse 0.8s infinite ease",
           border: "3px solid #ffcc0044",
         }} />
-      )}
-
-      {/* === Bug Break whiteout overlay === */}
-      {bugBreakActive && (
-        <>
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            background: "#ffffff",
-            pointerEvents: "none",
-            zIndex: 25,
-            animation: "bugBreakWhiteout 1.2s forwards ease-out",
-          }} />
-          <div style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            ...PIXEL_FONT,
-            fontSize: "48px",
-            color: "#ff4444",
-            zIndex: 26,
-            pointerEvents: "none",
-            animation: "bugBreakBanner 1.2s forwards ease-out",
-            whiteSpace: "nowrap",
-            letterSpacing: "4px",
-            textShadow: "0 0 20px #ff4444, 0 0 40px #ff444466, 3px 3px 0 #000",
-          }}>
-            BUG BREAK!
-          </div>
-        </>
       )}
 
       {/* === Combo edge flash === */}
@@ -813,26 +777,6 @@ export function BattleArena() {
         </div>
       )}
 
-      {/* === OVERCLOCK banner === */}
-      {overclock && (
-        <div style={{
-          position: "absolute",
-          bottom: "100px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          ...PIXEL_FONT,
-          fontSize: "20px",
-          color: "#ffcc00",
-          textShadow: "0 0 12px #ffcc00, 0 0 24px #ffcc0066, 2px 2px 0 #000",
-          animation: "overclockBanner 0.5s ease forwards, goldFlash 0.8s infinite ease",
-          pointerEvents: "none",
-          zIndex: 15,
-          letterSpacing: "4px",
-          whiteSpace: "nowrap",
-        }}>
-          OVERCLOCK
-        </div>
-      )}
 
       {/* Progress */}
       {encounters.length > 0 && (
