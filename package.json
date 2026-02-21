@@ -1,0 +1,20 @@
+{
+  "name": "agent-quest",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm dev:server\" \"pnpm dev:web\"",
+    "dev:server": "pnpm --filter @agent-quest/server dev",
+    "dev:web": "pnpm --filter @agent-quest/web dev",
+    "dev:terminal": "pnpm --filter @agent-quest/terminal dev",
+    "build": "pnpm -r build",
+    "build:core": "pnpm --filter @agent-quest/core build",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "concurrently": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
