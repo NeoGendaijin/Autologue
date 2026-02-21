@@ -41,20 +41,20 @@ export const PIXEL_FONT = {
 
 export const PIXEL_FONT_SM = {
   ...PIXEL_FONT,
-  fontSize: "11px",
-  lineHeight: "18px",
-} as const;
-
-export const PIXEL_FONT_MD = {
-  ...PIXEL_FONT,
   fontSize: "13px",
   lineHeight: "20px",
 } as const;
 
+export const PIXEL_FONT_MD = {
+  ...PIXEL_FONT,
+  fontSize: "15px",
+  lineHeight: "22px",
+} as const;
+
 export const PIXEL_FONT_LG = {
   ...PIXEL_FONT,
-  fontSize: "18px",
-  lineHeight: "26px",
+  fontSize: "22px",
+  lineHeight: "30px",
 } as const;
 
 // Agent type → emoji + name mapping

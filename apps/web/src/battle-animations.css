@@ -218,16 +218,10 @@
   to { background-position-x: -32px; }
 }
 
-/* Slow panoramic drift for stage background */
-@keyframes bgPanSlow {
-  from { background-position: 0% 50%; }
-  to { background-position: 100% 50%; }
-}
-
-/* Secondary slower drift layer */
-@keyframes bgPanSlower {
-  from { background-position: 100% 50%; }
-  to { background-position: 0% 50%; }
+/* Seamless horizontal loop (2 tiled panels) */
+@keyframes bgLoopX {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 
 /* Border glow animation for active panels */

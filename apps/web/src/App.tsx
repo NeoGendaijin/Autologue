@@ -39,49 +39,21 @@ export function App() {
       {/* Top status bar */}
       <StatusBar />
 
-      {/* Main content */}
+      {/* Battle arena — takes all remaining space */}
+      <BattleArena />
+
+      {/* Bottom bar: Party + Dialogue + Commands — compact row */}
       <div style={{
-        flex: 1,
+        height: "170px",
+        flexShrink: 0,
         display: "flex",
         minHeight: 0,
         overflow: "hidden",
+        borderTop: `2px solid ${COLORS.panelBorder}`,
       }}>
-        {/* Left: Battle arena + Dialogue */}
-        <div style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          minWidth: 0,
-        }}>
-          {/* Battle scene — takes most of the space */}
-          <BattleArena />
-
-          {/* Bottom section: Dialogue + Commands — compact */}
-          <div style={{
-            height: "150px",
-            flexShrink: 0,
-            display: "flex",
-            minHeight: 0,
-            overflow: "hidden",
-          }}>
-            {/* Dialogue box */}
-            <DialogueBox />
-
-            {/* Command menu */}
-            <CommandMenu />
-          </div>
-        </div>
-
-        {/* Right sidebar: Party */}
-        <div style={{
-          width: "200px",
-          display: "flex",
-          flexDirection: "column",
-          borderLeft: `2px solid ${COLORS.panelBorder}`,
-          overflow: "auto",
-        }}>
-          <PartyList />
-        </div>
+        <PartyList />
+        <DialogueBox />
+        <CommandMenu />
       </div>
 
       {/* Overlays */}

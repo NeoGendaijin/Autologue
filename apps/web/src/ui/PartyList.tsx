@@ -20,11 +20,14 @@ export function PartyList() {
   return (
     <div style={{
       background: COLORS.bgPanel,
-      border: `2px solid ${COLORS.panelBorder}`,
-      padding: "12px",
+      borderRight: `2px solid ${COLORS.panelBorder}`,
+      padding: "10px 14px",
       display: "flex",
       flexDirection: "column",
-      gap: "10px",
+      gap: "6px",
+      minWidth: "200px",
+      maxWidth: "220px",
+      overflow: "auto",
       animation: isActive ? "borderGlow 5s infinite ease" : undefined,
     }}>
       {/* Header */}
@@ -33,7 +36,7 @@ export function PartyList() {
         color: COLORS.textDim,
         letterSpacing: "2px",
         borderBottom: `1px solid ${COLORS.panelBorder}`,
-        paddingBottom: "8px",
+        paddingBottom: "4px",
         animation: isActive ? "pulse 3s infinite ease" : undefined,
       }}>
         PARTY
@@ -45,10 +48,10 @@ export function PartyList() {
           ...PIXEL_FONT_SM,
           color: COLORS.textDim,
           textAlign: "center",
-          padding: "12px 0",
+          padding: "6px 0",
           animation: "float 3s infinite ease",
         }}>
-          No party members
+          No party
         </div>
       )}
       {agents.map((agent, i) => {
@@ -59,29 +62,28 @@ export function PartyList() {
           <div key={agent.id} style={{
             display: "flex",
             alignItems: "center",
-            gap: "10px",
-            padding: "5px 8px",
+            gap: "8px",
+            padding: "3px 6px",
             background: agent.status !== "idle" ? `${COLORS.borderLight}33` : "transparent",
             border: `1px solid ${agent.status !== "idle" ? COLORS.borderLight : "transparent"}`,
             animation: isMain ? undefined : "summonFlash 0.8s ease, bounceIn 0.5s ease",
             animationDelay: isMain ? undefined : `${i * 0.1}s`,
           }}>
             <span style={{
-              fontSize: "28px",
+              fontSize: "22px",
               animation: agent.status !== "idle" ? "wobble 2s infinite ease" : "sway 4s infinite ease",
             }}>
               {sprite.emoji}
             </span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ ...PIXEL_FONT_SM, color: COLORS.parchment }}>
+              <div style={{ ...PIXEL_FONT_SM, color: COLORS.parchment, fontSize: "10px" }}>
                 {sprite.name}
               </div>
-              {/* HP mini bar */}
               <div style={{
                 width: "100%",
-                height: "6px",
+                height: "5px",
                 background: COLORS.hpRedDark,
-                marginTop: "4px",
+                marginTop: "2px",
               }}>
                 <div style={{
                   width: `${agent.hp}%`,
@@ -94,10 +96,8 @@ export function PartyList() {
             </div>
             <span style={{
               ...PIXEL_FONT_SM,
-              fontSize: "10px",
+              fontSize: "9px",
               color: statusInfo.color,
-              minWidth: "40px",
-              textAlign: "right",
               animation: agent.status === "thinking" ? "blink 1.5s infinite" :
                          agent.status === "coding" ? "pulse 1s infinite" : undefined,
             }}>
@@ -107,20 +107,17 @@ export function PartyList() {
         );
       })}
 
-      {/* Divider */}
-      <div style={{ height: "1px", background: COLORS.panelBorder, margin: "2px 0" }} />
-
-      {/* EXP + Mode */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ ...PIXEL_FONT_SM, color: COLORS.expGold }}>EXP</span>
-          <span style={{ ...PIXEL_FONT_SM, color: COLORS.textDim }}>
-            {exp % 100}/100
-          </span>
-        </div>
+      {/* EXP bar compact */}
+      <div style={{
+        marginTop: "auto",
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+      }}>
+        <span style={{ ...PIXEL_FONT_SM, fontSize: "9px", color: COLORS.expGold }}>EXP</span>
         <div style={{
-          width: "100%",
-          height: "8px",
+          flex: 1,
+          height: "6px",
           background: COLORS.expGoldDark,
           border: `1px solid ${COLORS.borderLight}`,
         }}>
@@ -131,16 +128,9 @@ export function PartyList() {
             transition: "width 0.3s",
           }} />
         </div>
-
-        <div style={{
-          ...PIXEL_FONT_SM,
-          color: COLORS.poison,
-          textAlign: "center",
-          marginTop: "4px",
-          animation: "sway 5s infinite ease",
-        }}>
-          {mode === "expert" ? "\uD83E\uDDE0 EXPERT" : "\uD83C\uDFB2 ADVENTURE"}
-        </div>
+        <span style={{ ...PIXEL_FONT_SM, fontSize: "9px", color: COLORS.poison }}>
+          {mode === "expert" ? "\uD83E\uDDE0" : "\uD83C\uDFB2"}
+        </span>
       </div>
     </div>
   );

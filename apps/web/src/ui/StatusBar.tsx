@@ -73,7 +73,7 @@ export function StatusBar() {
       {/* Title */}
       <div style={{
         ...PIXEL_FONT,
-        fontSize: "20px",
+        fontSize: "24px",
         color: COLORS.gold,
         letterSpacing: "3px",
         whiteSpace: "nowrap",

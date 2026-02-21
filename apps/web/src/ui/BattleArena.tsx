@@ -3,7 +3,15 @@ import { useGameStore } from "../store/gameStore";
 import { useBattleStore } from "../store/battleStore";
 import { COLORS, PIXEL_FONT_SM, PIXEL_FONT, PIXEL_FONT_MD, AGENT_PIXELS, AGENT_PIXEL_SPRITES, AGENT_SPRITES } from "../theme";
 
-type BackgroundTheme = "day" | "night";
+const BACKGROUND_IMAGES = [
+  "http://localhost:3001/asset/BackGround-day.png",
+  "http://localhost:3001/asset/BackGround-night.png",
+  "http://localhost:3001/asset/BackGround-3.png",
+];
+
+function pickRandomBackground(): string {
+  return BACKGROUND_IMAGES[Math.floor(Math.random() * BACKGROUND_IMAGES.length)];
+}
 
 // --- Generic pixel sprite renderer via CSS box-shadow ---
 function PixelSprite({ pixels, scale = 3, animation }: {
@@ -44,7 +52,7 @@ function PixelSprite({ pixels, scale = 3, animation }: {
 }
 
 // --- Main Agent (pixel character) ---
-function MainAgent({ scale = 9, attacking, hit }: { scale?: number; attacking?: boolean; hit?: boolean }) {
+function MainAgent({ scale = 12, attacking, hit }: { scale?: number; attacking?: boolean; hit?: boolean }) {
   const anim = attacking ? "slash 0.5s ease" :
                hit ? "agentHit 0.5s ease" :
                "idle 2s infinite ease";
@@ -75,7 +83,7 @@ function PartyMemberSprite({ agentType, index }: { agentType: string; index: num
         animation: "summon 0.6s ease",
       }}>
         <div style={{
-          fontSize: "64px",
+          fontSize: "80px",
           animation: "wobble 3s infinite ease",
           filter: "drop-shadow(0 0 8px #aa44ff66)",
         }}>
@@ -105,7 +113,7 @@ function PartyMemberSprite({ agentType, index }: { agentType: string; index: num
       }}>
         <PixelSprite
           pixels={pixels}
-          scale={7}
+          scale={9}
           animation={`idle ${2.2 + index * 0.3}s infinite ease`}
         />
       </div>
@@ -135,7 +143,7 @@ function DefeatedMarker({ emoji, index }: { emoji: string; index: number }) {
       animationDelay: `${index * 0.05}s`,
     }}>
       <div style={{
-        fontSize: "48px",
+        fontSize: "60px",
         transform: "rotate(15deg)",
         animation: "sway 4s infinite ease-in-out",
         animationDelay: `${index * 0.3}s`,
@@ -165,7 +173,7 @@ function ActiveEnemy({ emoji, name, color, isHit, isTaunting }: {
                  "enemyIdle 2.5s infinite ease",
     }}>
       <div style={{
-        fontSize: "100px",
+        fontSize: "140px",
         filter: isHit
           ? "brightness(2) drop-shadow(0 0 24px #ff4444)"
           : isTaunting
@@ -178,7 +186,7 @@ function ActiveEnemy({ emoji, name, color, isHit, isTaunting }: {
       </div>
       <div style={{
         ...PIXEL_FONT_SM,
-        fontSize: "14px",
+        fontSize: "16px",
         color,
         marginTop: "8px",
         textShadow: `1px 1px 0 #000, 0 0 8px ${color}44`,
@@ -222,14 +230,14 @@ function EnemySpeechBubble({ text, choices, onChoice }: {
         background: `${COLORS.bgDark}ee`,
         border: `3px solid ${COLORS.fire}`,
         borderRadius: "8px",
-        padding: "14px 18px",
-        maxWidth: "360px",
+        padding: "16px 22px",
+        maxWidth: "480px",
         boxShadow: `0 0 20px ${COLORS.fire}44, inset 0 0 10px ${COLORS.fire}11`,
       }}>
         {/* Taunt */}
         <div style={{
           ...PIXEL_FONT_SM,
-          fontSize: "12px",
+          fontSize: "14px",
           color: COLORS.fire,
           marginBottom: "8px",
           animation: "pulse 1.5s infinite ease",
@@ -239,9 +247,9 @@ function EnemySpeechBubble({ text, choices, onChoice }: {
         {/* Question text */}
         <div style={{
           ...PIXEL_FONT_SM,
-          fontSize: "13px",
+          fontSize: "15px",
           color: COLORS.parchment,
-          lineHeight: "20px",
+          lineHeight: "22px",
         }}>
           {text}
         </div>
@@ -275,10 +283,10 @@ function EnemySpeechBubble({ text, choices, onChoice }: {
               background: hoveredIdx === i ? `${COLORS.gold}33` : `${COLORS.bgDark}dd`,
               border: `2px solid ${hoveredIdx === i ? COLORS.gold : COLORS.borderLight}`,
               color: hoveredIdx === i ? COLORS.gold : COLORS.parchment,
-              padding: "12px 22px",
+              padding: "14px 26px",
               cursor: "pointer",
               ...PIXEL_FONT_SM,
-              fontSize: "13px",
+              fontSize: "15px",
               animation: `choiceSlideUp 0.4s ease`,
               animationDelay: `${0.3 + i * 0.12}s`,
               animationFillMode: "both",
@@ -348,21 +356,14 @@ export function BattleArena() {
   const isQuestion = phase === "question" && pendingQuestion;
   const defeated = encounters.filter((e) => e.status === "defeated");
   const active = encounters.find((e) => e.status === "active");
-  const [bgTheme, setBgTheme] = useState<BackgroundTheme>(() =>
-    Math.random() < 0.5 ? "day" : "night"
-  );
+  const [bgImageUrl, setBgImageUrl] = useState<string>(() => pickRandomBackground());
 
-  // Re-roll day/night at each quest start so each run feels different.
+  // Re-roll background at each quest start so each run feels different.
   useEffect(() => {
     if (phase === "running") {
-      setBgTheme(Math.random() < 0.5 ? "day" : "night");
+      setBgImageUrl(pickRandomBackground());
     }
   }, [phase]);
-
-  const bgImageUrl =
-    bgTheme === "day"
-      ? "http://localhost:3001/asset/BackGround-day.png"
-      : "http://localhost:3001/asset/BackGround-night.png";
 
   return (
     <div style={{
@@ -371,12 +372,51 @@ export function BattleArena() {
       minHeight: "240px",
       position: "relative",
       overflow: "hidden",
-      background: `linear-gradient(180deg, #0c0c24 0%, #1a1a3e 35%, #2a1a0e 75%, #1a1208 100%)`,
+      background: "linear-gradient(180deg, #0c0c24 0%, #1a1a3e 35%, #2a1a0e 75%, #1a1208 100%)",
       borderBottom: `2px solid ${COLORS.panelBorder}`,
       animation: screenShake ? "screenShake 0.5s ease" : undefined,
     }}>
+      {/* Seamless loop background: same image x2, scroll and wrap */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        overflow: "hidden",
+        zIndex: 0,
+      }}>
+        <div style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          height: "100%",
+          width: "200%",
+          display: "flex",
+          animation: "bgLoopX 60s linear infinite",
+          animationPlayState: isActive ? "running" : "paused",
+          willChange: "transform",
+          opacity: 0.5,
+          filter: "saturate(1.05)",
+        }}>
+          <div style={{
+            width: "50%",
+            height: "100%",
+            backgroundImage: `url(${bgImageUrl})`,
+            backgroundSize: "cover",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+          }} />
+          <div style={{
+            width: "50%",
+            height: "100%",
+            backgroundImage: `url(${bgImageUrl})`,
+            backgroundSize: "cover",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+          }} />
+        </div>
+      </div>
+
       {/* Twinkling Stars */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: "50%", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: "50%", overflow: "hidden", zIndex: 1 }}>
         {[...Array(35)].map((_, i) => (
           <Star key={i} index={i} />
         ))}
@@ -391,6 +431,7 @@ export function BattleArena() {
         height: "90px",
         background: "linear-gradient(180deg, #2a1a0e 0%, #1a1208 100%)",
         borderTop: `2px solid #3a2a1e`,
+        zIndex: 2,
       }}>
         <div style={{
           position: "absolute",
@@ -428,6 +469,7 @@ export function BattleArena() {
         overflowX: "hidden",
         padding: "0 40px",
         gap: "30px",
+        zIndex: 3,
       }}>
 
         {/* Defeated markers */}
@@ -462,10 +504,10 @@ export function BattleArena() {
             flexDirection: "column",
             alignItems: "center",
           }}>
-            <MainAgent scale={9} attacking={agentAttacking} hit={agentHit} />
+            <MainAgent attacking={agentAttacking} hit={agentHit} />
             <div style={{
               ...PIXEL_FONT,
-              fontSize: "14px",
+              fontSize: "16px",
               color: COLORS.gold,
               marginTop: "8px",
               animation: "shimmer 3s infinite ease",
@@ -486,7 +528,7 @@ export function BattleArena() {
           }}>
             <div style={{
               ...PIXEL_FONT,
-              fontSize: "22px",
+              fontSize: "28px",
               color: COLORS.fire,
               animation: "pulse 1.5s infinite ease",
               textShadow: `0 0 10px ${COLORS.fire}66, 2px 2px 0 #000`,
@@ -503,6 +545,7 @@ export function BattleArena() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            transform: "translateY(-14px)",
             animation: isQuestion ? undefined : "bounceIn 0.4s ease",
           }}>
             <ActiveEnemy
@@ -517,7 +560,7 @@ export function BattleArena() {
                 ...PIXEL_FONT_SM,
                 color: COLORS.textDim,
                 textAlign: "center",
-                marginTop: "6px",
+                marginTop: "2px",
                 maxWidth: "160px",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -535,7 +578,7 @@ export function BattleArena() {
           <div style={{
             flexShrink: 0,
             opacity: 0.2,
-            fontSize: "52px",
+            fontSize: "60px",
             animation: "float 2s infinite ease",
           }}>
             {"..."}
@@ -570,7 +613,7 @@ export function BattleArena() {
           right: "32%",
           top: "30%",
           ...PIXEL_FONT,
-          fontSize: dmg.isCrit ? "36px" : "26px",
+          fontSize: dmg.isCrit ? "44px" : "32px",
           color: dmg.color,
           textShadow: `0 0 10px ${dmg.color}, 3px 3px 0 #000`,
           animation: `${dmg.isCrit ? "critFloat" : "damageFloat"} 1s forwards ease-out`,
@@ -619,7 +662,7 @@ export function BattleArena() {
           left: "50%",
           transform: "translate(-50%, -50%)",
           ...PIXEL_FONT,
-          fontSize: "22px",
+          fontSize: "26px",
           color: COLORS.textDim,
           textShadow: "2px 2px 0 #000",
           letterSpacing: "4px",
