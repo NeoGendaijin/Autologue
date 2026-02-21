@@ -142,7 +142,7 @@ export const AGENT_WALK_FRAMES: (string | null)[][][] = [
     [_, _, _, A, A, A, _, W, _, _],
     [_, _, _, A, A, A, _, _, _, _],
     [_, _, _, L, _, L, _, _, _, _], // thighs col 3, 5 (SAME)
-    [_, _, , L, _, L, _, _, _, _], // left shin col 2 (back 1), right shin col 6 (fwd 1)
+    [_, _, _, L, _, L, _, _, _, _], // left shin col 2 (back 1), right shin col 6 (fwd 1)
     [_, _, L, L, _, L, L, _, _, _], // left foot 2-3, right foot 6-7
   ],
   // Frame 3 — Left heel lifts (preparing to step left)

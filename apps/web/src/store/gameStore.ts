@@ -183,7 +183,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   resetState: () => {
-    set({ state: createInitialState() });
+    set({ state: createInitialState(), continueContext: null, continueCwd: null });
   },
 
   deleteOutput: (outputDir: string) => {
