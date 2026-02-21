@@ -1,23 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGameStore } from "../store/gameStore";
 import { COLORS, PIXEL_FONT, PIXEL_FONT_SM, PIXEL_FONT_MD } from "../theme";
 
-const EXAMPLE_QUESTS = [
-  { emoji: "\uD83C\uDFD3", label: "Ping Pong", prompt: "Build a browser-based Pong game with HTML Canvas \u2014 two paddles, ball physics, scoring to 10, keyboard controls", cwd: "examples/ping-pong-game" },
-  { emoji: "\uD83D\uDC0D", label: "Snake Game", prompt: "Create the classic Snake game in a single HTML file using Canvas \u2014 grid movement, growing snake, increasing speed", cwd: "examples/snake-game" },
-  { emoji: "\uD83E\uDDEE", label: "Solve Equations", prompt: "Write a Python script that solves: quadratic 2x\u00B2+5x-3=0, linear system 3x+2y=12 & x-y=1, and derivative of x\u00B3-4x\u00B2+7x-2 at x=3. No external libraries.", cwd: "examples/solve-equations" },
-  { emoji: "\uD83D\uDCCB", label: "Todo CLI", prompt: "Build a Node.js CLI todo app \u2014 add, list, done, remove commands. Store tasks in todos.json. No dependencies.", cwd: "examples/todo-cli" },
-  { emoji: "\uD83D\uDCF0", label: "AI Report", prompt: "Research the state of AI in 2025 and write a ~500 word report covering breakthroughs, open vs closed source, agents, and regulation. Save to report.md", cwd: "examples/research-report" },
-  { emoji: "\uD83C\uDF24\uFE0F", label: "Weather App", prompt: "Build a responsive weather dashboard showing current weather for Tokyo, New York, and London with card layout and emoji icons", cwd: "examples/weather-dashboard" },
-  { emoji: "\uD83C\uDFB2", label: "RPG Battle", prompt: "Build a turn-based RPG battle system in HTML/JS/CSS: party of 3 heroes vs 2 monsters, each with HP/ATK/DEF stats, attack/heal/defend commands, animated HP bars, battle log, victory/defeat screens. Multiple files: index.html, styles.css, battle.js, data.js", cwd: "examples/rpg-battle" },
-  { emoji: "\uD83D\uDCC8", label: "Dashboard", prompt: "Build a full analytics dashboard with HTML/CSS/JS: 4 metric cards (users, revenue, orders, conversion), a line chart drawn on Canvas, a sortable data table with 10 rows, and a dark theme. Separate files for HTML, CSS, and JS. Make it responsive.", cwd: "examples/analytics-dashboard" },
-  { emoji: "\uD83C\uDFAE", label: "Tetris", prompt: "Build a complete Tetris game: all 7 tetromino shapes, rotation, wall kicks, line clearing with animation, score/level system, increasing speed, ghost piece, next piece preview, game over detection. Use HTML Canvas.", cwd: "examples/tetris" },
-  { emoji: "\uD83D\uDE80", label: "Space Shooter", prompt: "Build a space shooter game with HTML Canvas: player ship with WASD+arrow controls, shooting with spacebar, waves of enemies that move in patterns, explosions, score counter, 3 lives, boss enemy every 5 waves. Multiple files.", cwd: "examples/space-shooter" },
-];
+interface ExampleQuest {
+  emoji: string;
+  label: string;
+  prompt: string;
+  cwd: string;
+}
 
 export function GuildBoard() {
   const [prompt, setPrompt] = useState("");
   const [cwd, setCwd] = useState("");
+  const [exampleQuests, setExampleQuests] = useState<ExampleQuest[]>([]);
+
+  useEffect(() => {
+    fetch("http://localhost:3001/api/examples")
+      .then((r) => r.json())
+      .then((data) => setExampleQuests(data))
+      .catch(() => {});
+  }, []);
   const startQuest = useGameStore((s) => s.startQuest);
   const setMode = useGameStore((s) => s.setMode);
   const mode = useGameStore((s) => s.state.mode);
@@ -87,7 +89,7 @@ export function GuildBoard() {
             POSTED QUESTS
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-            {EXAMPLE_QUESTS.map((q, i) => {
+            {exampleQuests.map((q, i) => {
               const selected = prompt === q.prompt;
               return (
                 <button

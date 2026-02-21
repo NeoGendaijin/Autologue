@@ -41,8 +41,8 @@ function PixelSprite({ pixels, scale = 3, animation }: {
   );
 }
 
-// --- Pixel Hero (main character) ---
-function PixelHero({ scale = 7, attacking, hit }: { scale?: number; attacking?: boolean; hit?: boolean }) {
+// --- Main Agent (pixel character) ---
+function MainAgent({ scale = 7, attacking, hit }: { scale?: number; attacking?: boolean; hit?: boolean }) {
   const anim = attacking ? "slash 0.5s ease" :
                hit ? "heroHit 0.5s ease" :
                "idle 2s infinite ease";
@@ -81,7 +81,7 @@ function PartyMemberSprite({ agentType, index }: { agentType: string; index: num
         </div>
         <div style={{
           ...PIXEL_FONT_SM,
-          fontSize: "9px",
+          fontSize: "8px",
           color: COLORS.ice,
           marginTop: "4px",
           textShadow: "1px 1px 0 #000",
@@ -110,9 +110,9 @@ function PartyMemberSprite({ agentType, index }: { agentType: string; index: num
       </div>
       <div style={{
         ...PIXEL_FONT_SM,
-        fontSize: "8px",
+        fontSize: "7px",
         color: COLORS.ice,
-        marginTop: "4px",
+        marginTop: "3px",
         textShadow: "1px 1px 0 #000",
         animation: "pulse 3s infinite ease",
       }}>
@@ -284,7 +284,7 @@ export function BattleArena() {
         ))}
       </div>
 
-      {/* === Main battle scene — centered vertically === */}
+      {/* === Main battle scene — centered === */}
       <div ref={scrollRef} style={{
         position: "absolute",
         bottom: "80px",
@@ -296,10 +296,10 @@ export function BattleArena() {
         justifyContent: "center",
         overflowX: "hidden",
         padding: "0 40px",
-        gap: "20px",
+        gap: "24px",
       }}>
 
-        {/* Left cluster: defeated markers */}
+        {/* Defeated markers */}
         {defeated.length > 0 && (
           <div style={{
             flexShrink: 0,
@@ -313,41 +313,38 @@ export function BattleArena() {
           </div>
         )}
 
-        {/* Party formation: sub-agents stacked behind hero */}
-        {subAgents.length > 0 && (
-          <div style={{
-            flexShrink: 0,
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-            alignItems: "center",
-          }}>
-            {subAgents.map((agent, i) => (
-              <PartyMemberSprite key={agent.id} agentType={agent.type} index={i} />
-            ))}
-          </div>
-        )}
-
-        {/* HERO — front and center */}
+        {/* === Party: sub-agents + main agent side by side === */}
         <div style={{
           flexShrink: 0,
           display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
+          alignItems: "flex-end",
+          gap: "16px",
         }}>
-          <PixelHero scale={7} attacking={heroAttacking} hit={heroHit} />
+          {/* Sub-agents on the left, walking alongside */}
+          {subAgents.map((agent, i) => (
+            <PartyMemberSprite key={agent.id} agentType={agent.type} index={i} />
+          ))}
+
+          {/* Main Agent (front) */}
           <div style={{
-            ...PIXEL_FONT,
-            fontSize: "10px",
-            color: COLORS.gold,
-            marginTop: "8px",
-            animation: "shimmer 3s infinite ease",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}>
-            HERO
+            <MainAgent scale={7} attacking={heroAttacking} hit={heroHit} />
+            <div style={{
+              ...PIXEL_FONT,
+              fontSize: "10px",
+              color: COLORS.gold,
+              marginTop: "8px",
+              animation: "shimmer 3s infinite ease",
+            }}>
+              AGENT
+            </div>
           </div>
         </div>
 
-        {/* VS gap */}
+        {/* VS */}
         {active && (
           <div style={{
             flexShrink: 0,
@@ -368,7 +365,7 @@ export function BattleArena() {
           </div>
         )}
 
-        {/* Active enemy — BIG */}
+        {/* Active enemy */}
         {active && (
           <div style={{
             flexShrink: 0,
@@ -398,7 +395,7 @@ export function BattleArena() {
           </div>
         )}
 
-        {/* Waiting placeholder */}
+        {/* Waiting */}
         {isActive && !active && (
           <div style={{
             flexShrink: 0,
@@ -429,7 +426,7 @@ export function BattleArena() {
         </div>
       ))}
 
-      {/* Progress indicator */}
+      {/* Progress */}
       {encounters.length > 0 && (
         <div style={{
           position: "absolute",
@@ -459,7 +456,7 @@ export function BattleArena() {
         </div>
       )}
 
-      {/* Phase overlay text */}
+      {/* Phase overlay */}
       {phase !== "running" && phase !== "question" && phase !== "complete" && encounters.length === 0 && (
         <div style={{
           position: "absolute",

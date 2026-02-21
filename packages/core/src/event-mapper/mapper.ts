@@ -282,27 +282,28 @@ function generateQuestionFromText(text: string): {
   text: string;
   choices: QuestionChoice[];
 } {
+  // Try to extract "A or B" style options from the question
+  const orMatch = text.match(/should I (?:use |go with |pick |choose )?(.+?)\s+or\s+(.+?)[\?\.]?$/im);
+  if (orMatch) {
+    const optA = orMatch[1].replace(/^(use |go with |pick )/i, "").trim();
+    const optB = orMatch[2].replace(/[\?\.\s]+$/, "").trim();
+    return {
+      text: text.trim(),
+      choices: [
+        { label: optA.slice(0, 40), contextCost: 30, quality: "★★", risk: "LOW" },
+        { label: optB.slice(0, 40), contextCost: 30, quality: "★★", risk: "LOW" },
+        { label: "Your call", contextCost: 5, quality: "???", risk: "MED" },
+      ],
+    };
+  }
+
+  // Default: simple yes/no/skip
   return {
     text: text.trim(),
     choices: [
-      {
-        label: "Provide detailed guidance",
-        contextCost: 150,
-        quality: "★★★",
-        risk: "LOW",
-      },
-      {
-        label: "Give a brief direction",
-        contextCost: 40,
-        quality: "★★",
-        risk: "MED",
-      },
-      {
-        label: "Let the agent decide",
-        contextCost: 5,
-        quality: "???",
-        risk: "HIGH",
-      },
+      { label: "Yes, go ahead", contextCost: 20, quality: "★★", risk: "LOW" },
+      { label: "No, try another way", contextCost: 40, quality: "★★★", risk: "LOW" },
+      { label: "You decide", contextCost: 5, quality: "???", risk: "MED" },
     ],
   };
 }
