@@ -1,5 +1,11 @@
 import type { GeminiEvent } from "../gemini-adapter/types.js";
-import type { GameEvent, AgentInfo, AgentType, QuestionChoice } from "../game-engine/events.js";
+import type {
+  AgentAction,
+  GameEvent,
+  AgentInfo,
+  AgentType,
+  QuestionChoice,
+} from "../game-engine/events.js";
 import {
   QUESTION_PATTERNS,
   SUBAGENT_PATTERNS,
@@ -20,8 +26,7 @@ import {
  * A single Gemini event may produce zero or more game events.
  */
 export class EventMapper {
-  private lastToolUseAction: string | null = null;
-  private lastToolUseCommand: string | null = null;
+  private lastToolUseAction: AgentAction | null = null;
   private subagentCounter = 0;
 
   // Auto-spawn tracking
@@ -79,9 +84,7 @@ export class EventMapper {
 
       // Check for subagent spawn patterns
       if (matchesAny(event.content, SUBAGENT_PATTERNS)) {
-        this.subagentCounter++;
-        const agent = createSubagent(this.subagentCounter, event.content);
-        events.push({ type: "SUBAGENT_SPAWN", agent });
+        events.push(this.createSubagentSpawn(event.content));
         return events;
       }
 
@@ -104,67 +107,54 @@ export class EventMapper {
     switch (action) {
       case "reading": {
         this.readCount++;
-        const readEvents: GameEvent[] = [
+        return this.withOptionalSpawn(
           {
             type: "FILE_READ",
             path: extractFilePath(event.args),
             agentId: "main",
           },
-        ];
-        // First read → spawn Scout
-        if (this.readCount === 1 && !this.spawnedTypes.has("search")) {
-          this.spawnedTypes.add("search");
-          this.subagentCounter++;
-          readEvents.push({
-            type: "SUBAGENT_SPAWN",
-            agent: createSubagent(this.subagentCounter, "search scout reconnaissance"),
-          });
-        }
-        return readEvents;
+          this.maybeSpawnAtThreshold({
+            count: this.readCount,
+            threshold: 1,
+            spawnType: "search",
+            context: "search scout reconnaissance",
+          })
+        );
       }
 
       case "writing": {
         this.writeCount++;
-        const writeEvents: GameEvent[] = [
+        return this.withOptionalSpawn(
           {
             type: "FILE_WRITE",
             path: extractFilePath(event.args),
             agentId: "main",
           },
-        ];
-        // After 3 writes → spawn Coder companion
-        if (this.writeCount === 3 && !this.spawnedTypes.has("fix")) {
-          this.spawnedTypes.add("fix");
-          this.subagentCounter++;
-          writeEvents.push({
-            type: "SUBAGENT_SPAWN",
-            agent: createSubagent(this.subagentCounter, "fix patch code forge"),
-          });
-        }
-        return writeEvents;
+          this.maybeSpawnAtThreshold({
+            count: this.writeCount,
+            threshold: 3,
+            spawnType: "fix",
+            context: "fix patch code forge",
+          })
+        );
       }
 
       case "testing": {
         this.testCount++;
         const command = extractCommand(event.args);
-        this.lastToolUseCommand = command;
-        const testEvents: GameEvent[] = [
+        return this.withOptionalSpawn(
           {
             type: "TEST_RUN",
             testTarget: command,
             agentId: "main",
           },
-        ];
-        // First test → spawn Tester
-        if (this.testCount === 1 && !this.spawnedTypes.has("test")) {
-          this.spawnedTypes.add("test");
-          this.subagentCounter++;
-          testEvents.push({
-            type: "SUBAGENT_SPAWN",
-            agent: createSubagent(this.subagentCounter, "test verify guard"),
-          });
-        }
-        return testEvents;
+          this.maybeSpawnAtThreshold({
+            count: this.testCount,
+            threshold: 1,
+            spawnType: "test",
+            context: "test verify guard",
+          })
+        );
       }
 
       case "searching":
@@ -183,7 +173,6 @@ export class EventMapper {
 
       case "coding":
       default:
-        this.lastToolUseCommand = extractCommand(event.args);
         return [
           {
             type: "TOOL_USE",
@@ -228,7 +217,6 @@ export class EventMapper {
 
     // Reset tracking
     this.lastToolUseAction = null;
-    this.lastToolUseCommand = null;
 
     return events;
   }
@@ -240,7 +228,7 @@ export class EventMapper {
       {
         type: "ERROR",
         message: event.message ?? "Unknown error",
-        severity: "error",
+        severity: "fatal",
       },
     ];
   }
@@ -270,6 +258,35 @@ export class EventMapper {
     }
 
     return events;
+  }
+
+  private withOptionalSpawn(
+    baseEvent: GameEvent,
+    spawnEvent: GameEvent | null
+  ): GameEvent[] {
+    return spawnEvent ? [baseEvent, spawnEvent] : [baseEvent];
+  }
+
+  private maybeSpawnAtThreshold(input: {
+    count: number;
+    threshold: number;
+    spawnType: string;
+    context: string;
+  }): GameEvent | null {
+    if (input.count !== input.threshold || this.spawnedTypes.has(input.spawnType)) {
+      return null;
+    }
+
+    this.spawnedTypes.add(input.spawnType);
+    return this.createSubagentSpawn(input.context);
+  }
+
+  private createSubagentSpawn(context: string): GameEvent {
+    this.subagentCounter++;
+    return {
+      type: "SUBAGENT_SPAWN",
+      agent: createSubagent(this.subagentCounter, context),
+    };
   }
 }
 

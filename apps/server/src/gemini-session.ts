@@ -35,6 +35,7 @@ interface AgentRuntime {
   sendInput: (text: string) => void;
   kill: () => void;
   isRunning: () => boolean;
+  getLastError?: () => string | null;
   filesCreated?: string[];
 }
 
@@ -93,12 +94,7 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
 
     // Create and start coding process (OpenRouter or Gemini CLI)
     console.log(`[session] Agent backend: ${this.backend}`);
-    this.process = this.createProcess(this.options.prompt);
-    this.process.start();
-    await this.consumeProcessEvents();
-
-    // Quest finished — emit completion if still running
-    this.completeQuestIfActive();
+    await this.runProcessLoop(this.options.prompt);
   }
 
   handlePlayerChoice(choiceIndex: number, responseText: string): void {
@@ -145,17 +141,16 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
     this.applyEvent({ type: "REVIVE", addedContext: 100_000 });
 
     // Restart coding process to continue the quest
-    this.process = this.createProcess(`Continue the previous task: ${this.options.prompt}`);
-    this.process.start();
-    await this.consumeProcessEvents();
-    this.completeQuestIfActive();
+    await this.runProcessLoop(this.buildResumePrompt());
   }
 
-  private async consumeProcessEvents(): Promise<void> {
-    if (!this.process) return;
+  private async consumeProcessEvents(): Promise<{ mappedEventCount: number }> {
+    if (!this.process) return { mappedEventCount: 0 };
+    let mappedEventCount = 0;
     try {
       for await (const geminiEvent of this.process.getEventStream()) {
         const gameEvents = this.mapper.map(geminiEvent);
+        mappedEventCount += gameEvents.length;
         for (const gameEvent of gameEvents) {
           this.applyEvent(gameEvent);
         }
@@ -167,7 +162,9 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
         message,
         severity: "fatal",
       });
+      return { mappedEventCount };
     }
+    return { mappedEventCount };
   }
 
   private completeQuestIfActive(): void {
@@ -180,6 +177,33 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
     }
   }
 
+  private async runProcessLoop(prompt: string): Promise<void> {
+    this.process = this.createProcess(prompt);
+    this.process.start();
+    const summary = await this.consumeProcessEvents();
+
+    // Guard against silent backend crashes (e.g. CLI startup/runtime failure).
+    if (
+      summary.mappedEventCount === 0 &&
+      (this.state.phase === "running" || this.state.phase === "question")
+    ) {
+      const diagnostics = this.process.getLastError?.();
+      this.applyEvent({
+        type: "GAME_OVER",
+        reason: diagnostics
+          ? `Agent process ended early: ${diagnostics}`
+          : "Agent process ended before producing any events.",
+      });
+      return;
+    }
+
+    this.completeQuestIfActive();
+  }
+
+  private buildResumePrompt(): string {
+    return `Continue the previous task: ${this.options.prompt}`;
+  }
+
   private createProcess(prompt: string): AgentRuntime {
     if (this.backend === "gemini-cli") {
       return new GeminiProcess({
@@ -187,6 +211,7 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
         cwd: this.options.cwd || this.outputDir,
         model: process.env.GEMINI_MODEL,
         binaryPath: process.env.GEMINI_CLI_PATH,
+        nodePath: process.env.GEMINI_NODE_PATH,
       });
     }
 

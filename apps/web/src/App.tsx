@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useGameStore } from "./store/gameStore";
 import "./store/battleStore"; // Initialize battle subscription
 import { useKeyboard } from "./hooks/useKeyboard";
 import "./battle-animations.css";
 
+import { TitleScreen } from "./ui/TitleScreen";
 import { StatusBar } from "./ui/StatusBar";
 import { BattleArena } from "./ui/BattleArena";
 import { DialogueBox } from "./ui/DialogueBox";
@@ -44,6 +45,7 @@ function MovingDottedDivider() {
 
 export function App() {
   const phase = useGameStore((s) => s.state.phase);
+  const [showTitle, setShowTitle] = useState(true);
 
   useKeyboard();
 
@@ -92,6 +94,9 @@ export function App() {
       {(phase === "idle" || phase === "quest-input") && <GuildBoard />}
       {phase === "complete" && <VictoryScreen />}
       {phase === "game-over" && <GameOverScreen />}
+
+      {/* Title Screen — shown once on first load */}
+      {showTitle && <TitleScreen onStart={() => setShowTitle(false)} />}
     </div>
   );
 }

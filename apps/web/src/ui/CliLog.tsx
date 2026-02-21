@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react";
 import { useGameStore } from "../store/gameStore";
+import { useBattleStore } from "../store/battleStore";
 import { COLORS, PIXEL_FONT_SM } from "../theme";
 
 const TYPE_STYLES: Record<string, { prefix: string; color: string }> = {
@@ -13,6 +14,7 @@ const TYPE_STYLES: Record<string, { prefix: string; color: string }> = {
 
 export function CliLog() {
   const questLog = useGameStore((s) => s.state.questLog);
+  const overclock = useBattleStore((s) => s.overclock);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,9 +85,13 @@ export function CliLog() {
           return (
             <div key={`${entry.timestamp}-${i}`} style={{
               ...PIXEL_FONT_SM,
-              color: style.color,
+              color: overclock && isRecent ? "#ffcc00" : style.color,
               opacity,
-              animation: isRecent ? "slideInLeft 0.2s ease" : undefined,
+              animation: isRecent
+                ? overclock
+                  ? "slideInLeft 0.2s ease, goldFlash 0.8s infinite ease"
+                  : "slideInLeft 0.2s ease"
+                : undefined,
               transition: "opacity 0.5s ease",
             }}>
               <span style={{ color: COLORS.textDim, marginRight: "6px" }}>{style.prefix}</span>

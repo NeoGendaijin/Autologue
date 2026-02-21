@@ -52,8 +52,8 @@ function PixelSprite({ pixels, scale = 3, animation }: {
 }
 
 // --- Main Agent (pixel character with walk animation) ---
-function MainAgent({ scale = 24, attacking, hit, walking }: {
-  scale?: number; attacking?: boolean; hit?: boolean; walking?: boolean;
+function MainAgent({ scale = 24, attacking, hit, walking, overclock: isOverclock }: {
+  scale?: number; attacking?: boolean; hit?: boolean; walking?: boolean; overclock?: boolean;
 }) {
   const [frame, setFrame] = useState(0);
 
@@ -78,11 +78,25 @@ function MainAgent({ scale = 24, attacking, hit, walking }: {
 
   return (
     <div style={{
+      position: "relative",
       filter: attacking
         ? "drop-shadow(0 0 20px #ffcc00) drop-shadow(0 0 40px #ffcc0066)"
-        : "drop-shadow(0 0 8px #ffcc0044)",
+        : isOverclock
+          ? "drop-shadow(0 0 16px #ffcc00) drop-shadow(0 0 32px #ffcc0066)"
+          : "drop-shadow(0 0 8px #ffcc0044)",
       transition: "filter 0.3s",
     }}>
+      {/* Afterimage trails during overclock */}
+      {isOverclock && (
+        <>
+          <div style={{ position: "absolute", top: 0, left: 0, opacity: 0.4, animation: "afterimage 0.4s infinite linear", animationDelay: "0s" }}>
+            <PixelSprite pixels={pixels} scale={scale} />
+          </div>
+          <div style={{ position: "absolute", top: 0, left: 0, opacity: 0.2, animation: "afterimage 0.4s infinite linear", animationDelay: "0.15s" }}>
+            <PixelSprite pixels={pixels} scale={scale} />
+          </div>
+        </>
+      )}
       <PixelSprite pixels={pixels} scale={scale} animation={anim} />
     </div>
   );
@@ -183,8 +197,8 @@ function DefeatedMarker({ emoji, index }: { emoji: string; index: number }) {
 }
 
 // --- Active enemy being fought ---
-function ActiveEnemy({ emoji, name, color, isHit, isTaunting }: {
-  emoji: string; name: string; color: string; isHit: boolean; isTaunting?: boolean;
+function ActiveEnemy({ emoji, name, color, isHit, isTaunting, isStunned }: {
+  emoji: string; name: string; color: string; isHit: boolean; isTaunting?: boolean; isStunned?: boolean;
 }) {
   return (
     <div style={{
@@ -192,19 +206,22 @@ function ActiveEnemy({ emoji, name, color, isHit, isTaunting }: {
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-      animation: isHit ? "enemyHit 0.5s ease" :
+      animation: isStunned ? "stunWobble 1.2s ease" :
+                 isHit ? "enemyHit 0.5s ease" :
                  isTaunting ? "taunt 2s infinite ease" :
                  "enemyIdle 2.5s infinite ease",
     }}>
       <div style={{
         fontSize: "280px",
-        filter: isHit
-          ? "brightness(2) drop-shadow(0 0 24px #ff4444)"
-          : isTaunting
-            ? "drop-shadow(0 0 16px #ff444488) drop-shadow(0 0 30px #ff440044)"
-            : "drop-shadow(0 0 12px #00000088) drop-shadow(0 0 24px #ff444422)",
-        transition: "filter 0.1s",
-        animation: isHit ? undefined : "wobble 3s infinite ease-in-out",
+        filter: isStunned
+          ? "brightness(8) saturate(0)"
+          : isHit
+            ? "brightness(2) drop-shadow(0 0 24px #ff4444)"
+            : isTaunting
+              ? "drop-shadow(0 0 16px #ff444488) drop-shadow(0 0 30px #ff440044)"
+              : "drop-shadow(0 0 12px #00000088) drop-shadow(0 0 24px #ff444422)",
+        transition: "filter 0.15s",
+        animation: isStunned ? undefined : isHit ? undefined : "wobble 3s infinite ease-in-out",
       }}>
         {emoji}
       </div>
@@ -368,6 +385,10 @@ export function BattleArena() {
   const screenShake = useBattleStore((s) => s.screenShake);
   const agentAttacking = useBattleStore((s) => s.agentAttacking);
   const agentHit = useBattleStore((s) => s.agentHit);
+  const comboCount = useBattleStore((s) => s.comboCount);
+  const comboTimestamp = useBattleStore((s) => s.comboTimestamp);
+  const overclock = useBattleStore((s) => s.overclock);
+  const bugBreakActive = useBattleStore((s) => s.bugBreakActive);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const subAgents = agents.filter((a) => a.id !== "main");
@@ -418,7 +439,7 @@ export function BattleArena() {
           height: "100%",
           width: "200%",
           display: "flex",
-          animation: "bgLoopX 60s linear infinite",
+          animation: `bgLoopX ${overclock ? "30s" : "60s"} linear infinite`,
           animationPlayState: isActive ? "running" : "paused",
           willChange: "transform",
           opacity: 0.5,
@@ -534,7 +555,7 @@ export function BattleArena() {
               alignItems: "center",
               animation: isActive ? "walkStride 0.72s infinite ease-in-out" : undefined,
             }}>
-              <MainAgent attacking={agentAttacking} hit={agentHit} walking={isActive} />
+              <MainAgent attacking={agentAttacking} hit={agentHit} walking={isActive} overclock={overclock} />
               <div style={{
                 position: "absolute",
                 top: "100%",
@@ -546,7 +567,7 @@ export function BattleArena() {
                 minWidth: "260px",
                 textAlign: "center",
                 whiteSpace: "nowrap",
-                animation: "shimmer 3s infinite ease",
+                animation: overclock ? "shimmer 1s infinite ease, goldFlash 0.8s infinite ease" : "shimmer 3s infinite ease",
               }}>
                 AGENT
               </div>
@@ -565,6 +586,7 @@ export function BattleArena() {
                   attacking={agentAttacking}
                   hit={agentHit && (i === 0 || !splitFormation)}
                   walking={isActive}
+                  overclock={overclock}
                 />
                 <div style={{
                   position: "absolute",
@@ -578,7 +600,7 @@ export function BattleArena() {
                   textAlign: "center",
                   whiteSpace: "nowrap",
                   letterSpacing: "1px",
-                  animation: "shimmer 3s infinite ease",
+                  animation: overclock ? "shimmer 1s infinite ease, goldFlash 0.8s infinite ease" : "shimmer 3s infinite ease",
                 }}>
                   {splitFormation ? `AGENT ${i + 1}` : "AGENT"}
                 </div>
@@ -625,6 +647,7 @@ export function BattleArena() {
               color={active.color}
               isHit={agentAttacking}
               isTaunting={!!isQuestion}
+              isStunned={bugBreakActive}
             />
             {!isQuestion && (
               <div style={{
@@ -680,23 +703,136 @@ export function BattleArena() {
         </div>
       )}
 
-      {/* === Damage numbers === */}
-      {damageNumbers.map((dmg) => (
-        <div key={dmg.id} style={{
+      {/* === Overclock glow overlay === */}
+      {overclock && (
+        <div style={{
           position: "absolute",
-          right: "32%",
-          top: "30%",
-          ...PIXEL_FONT,
-          fontSize: dmg.isCrit ? "44px" : "32px",
-          color: dmg.color,
-          textShadow: `0 0 10px ${dmg.color}, 3px 3px 0 #000`,
-          animation: `${dmg.isCrit ? "critFloat" : "damageFloat"} 1s forwards ease-out`,
+          inset: 0,
           pointerEvents: "none",
-          zIndex: 10,
+          zIndex: 5,
+          animation: "overclockPulse 0.8s infinite ease",
+          border: "3px solid #ffcc0044",
+        }} />
+      )}
+
+      {/* === Bug Break whiteout overlay === */}
+      {bugBreakActive && (
+        <>
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            background: "#ffffff",
+            pointerEvents: "none",
+            zIndex: 25,
+            animation: "bugBreakWhiteout 1.2s forwards ease-out",
+          }} />
+          <div style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            ...PIXEL_FONT,
+            fontSize: "48px",
+            color: "#ff4444",
+            zIndex: 26,
+            pointerEvents: "none",
+            animation: "bugBreakBanner 1.2s forwards ease-out",
+            whiteSpace: "nowrap",
+            letterSpacing: "4px",
+            textShadow: "0 0 20px #ff4444, 0 0 40px #ff444466, 3px 3px 0 #000",
+          }}>
+            BUG BREAK!
+          </div>
+        </>
+      )}
+
+      {/* === Combo edge flash === */}
+      {comboCount >= 3 && (
+        <div key={comboTimestamp} style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 4,
+          boxShadow: comboCount >= 10
+            ? "inset 0 0 80px #ff44ff88, inset 0 0 160px #ff44ff44"
+            : comboCount >= 6
+              ? "inset 0 0 60px #ffff4466, inset 0 0 120px #ffff4433"
+              : "inset 0 0 40px #ffaa2244, inset 0 0 80px #ffaa2222",
+          animation: "edgeFlash 0.6s forwards ease-out",
+        }} />
+      )}
+
+      {/* === Damage numbers (combo-scaled) === */}
+      {damageNumbers.map((dmg) => {
+        // Scale font size based on combo
+        const comboScale = comboCount >= 10 ? 2.0 : comboCount >= 6 ? 1.6 : comboCount >= 3 ? 1.3 : 1.0;
+        const baseSize = dmg.isCrit ? 44 : 32;
+        const fontSize = Math.round(baseSize * comboScale);
+        const animName = dmg.isCrit && comboCount >= 6 ? "superCritFloat" : dmg.isCrit ? "critFloat" : "damageFloat";
+
+        return (
+          <div key={dmg.id} style={{
+            position: "absolute",
+            right: "32%",
+            top: "30%",
+            ...PIXEL_FONT,
+            fontSize: `${fontSize}px`,
+            color: dmg.color,
+            textShadow: `0 0 10px ${dmg.color}, 3px 3px 0 #000`,
+            animation: `${animName} 1s forwards ease-out${comboCount >= 10 ? ", comboRainbow 0.5s infinite linear" : ""}`,
+            pointerEvents: "none",
+            zIndex: 10,
+          }}>
+            {dmg.isCrit && "\u2605"}{dmg.value}
+          </div>
+        );
+      })}
+
+      {/* === COMBO counter === */}
+      {comboCount >= 2 && (
+        <div key={comboTimestamp} style={{
+          position: "absolute",
+          top: "18px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          ...PIXEL_FONT,
+          fontSize: comboCount >= 10 ? "38px" : comboCount >= 6 ? "32px" : "26px",
+          color: comboCount >= 10 ? "#ff44ff" : comboCount >= 6 ? "#ffff44" : "#ffaa22",
+          textShadow: comboCount >= 10
+            ? "0 0 20px #ff44ff, 0 0 40px #ff44ff66, 3px 3px 0 #000"
+            : comboCount >= 6
+              ? "0 0 16px #ffff44, 0 0 30px #ffff4444, 3px 3px 0 #000"
+              : "0 0 12px #ffaa22, 3px 3px 0 #000",
+          animation: `comboPulse 0.3s ease, ${comboCount >= 10 ? "comboRainbow 0.8s infinite linear" : "comboIdle 2s infinite ease"}`,
+          pointerEvents: "none",
+          zIndex: 15,
+          letterSpacing: "2px",
+          whiteSpace: "nowrap",
         }}>
-          {dmg.isCrit && "\u2605"}{dmg.value}
+          COMBO x{comboCount}
         </div>
-      ))}
+      )}
+
+      {/* === OVERCLOCK banner === */}
+      {overclock && (
+        <div style={{
+          position: "absolute",
+          bottom: "100px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          ...PIXEL_FONT,
+          fontSize: "20px",
+          color: "#ffcc00",
+          textShadow: "0 0 12px #ffcc00, 0 0 24px #ffcc0066, 2px 2px 0 #000",
+          animation: "overclockBanner 0.5s ease forwards, goldFlash 0.8s infinite ease",
+          pointerEvents: "none",
+          zIndex: 15,
+          letterSpacing: "4px",
+          whiteSpace: "nowrap",
+        }}>
+          OVERCLOCK
+        </div>
+      )}
 
       {/* Progress */}
       {encounters.length > 0 && (

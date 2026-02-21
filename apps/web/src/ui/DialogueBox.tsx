@@ -4,6 +4,7 @@ import { COLORS, PIXEL_FONT_SM } from "../theme";
 
 export function DialogueBox() {
   const battleLog = useBattleStore((s) => s.battleLog);
+  const overclock = useBattleStore((s) => s.overclock);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -73,9 +74,13 @@ export function DialogueBox() {
           return (
             <div key={entry.id} style={{
               ...PIXEL_FONT_SM,
-              color: textColor,
+              color: overclock && isRecent ? "#ffcc00" : textColor,
               opacity,
-              animation: isRecent ? "slideInLeft 0.3s ease" : undefined,
+              animation: isRecent
+                ? overclock
+                  ? "slideInLeft 0.3s ease, goldFlash 0.8s infinite ease"
+                  : "slideInLeft 0.3s ease"
+                : undefined,
               transition: "opacity 0.5s ease",
             }}>
               {">"} {entry.text}

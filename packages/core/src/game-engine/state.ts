@@ -91,6 +91,18 @@ const PROMPT_DAMAGE_FREE_TOKENS = 180;
 const PROMPT_TOKENS_PER_HP = 180;
 const CONTEXT_TOKENS_PER_HP = 3000;
 
+interface ContextLoadOptions {
+  contextDelta: number;
+  source: string;
+  logText?: string;
+  logType?: LogEntry["type"];
+  mpCost?: number;
+  agentUpdate?: {
+    agentId: string;
+    status: AgentInfo["status"];
+  };
+}
+
 // --- Pure Reducer ---
 
 export function reduceGameEvent(
@@ -139,44 +151,60 @@ export function reduceGameEvent(
     }
 
     case "FILE_READ": {
-      const nextUsed = state.contextUsed + 5000 + Math.floor(Math.random() * 10000);
-      const nextState: GameState = {
-        ...state,
-        agents: updateAgentStatus(state.agents, event.agentId, "searching"),
-        questLog: addLog(state.questLog, `Reading ${event.path}`, "action", now),
-      };
-      return applyContextPressure(nextState, nextUsed, now, "file read load");
+      return applyContextLoad(
+        state,
+        now,
+        {
+          contextDelta: 5000 + Math.floor(Math.random() * 10000),
+          source: "file read load",
+          logText: `Reading ${event.path}`,
+          logType: "action",
+          agentUpdate: { agentId: event.agentId, status: "searching" },
+        }
+      );
     }
 
     case "FILE_WRITE": {
-      const nextUsed = state.contextUsed + 3000 + Math.floor(Math.random() * 5000);
-      const nextState: GameState = {
-        ...state,
-        agents: updateAgentStatus(state.agents, event.agentId, "coding"),
-        questLog: addLog(state.questLog, `Writing ${event.path}`, "action", now),
-      };
-      return applyContextPressure(nextState, nextUsed, now, "file write load");
+      return applyContextLoad(
+        state,
+        now,
+        {
+          contextDelta: 3000 + Math.floor(Math.random() * 5000),
+          source: "file write load",
+          logText: `Writing ${event.path}`,
+          logType: "action",
+          agentUpdate: { agentId: event.agentId, status: "coding" },
+        }
+      );
     }
 
     case "CODE_GENERATE": {
-      const nextUsed = state.contextUsed + 8000 + Math.floor(Math.random() * 15000);
-      const nextState: GameState = {
-        ...state,
-        agents: updateAgentStatus(state.agents, event.agentId, "coding"),
-        questLog: addLog(state.questLog, `Generating code for ${event.target}`, "action", now),
-      };
-      return applyContextPressure(nextState, nextUsed, now, "code generation load");
+      return applyContextLoad(
+        state,
+        now,
+        {
+          contextDelta: 8000 + Math.floor(Math.random() * 15000),
+          source: "code generation load",
+          logText: `Generating code for ${event.target}`,
+          logType: "action",
+          agentUpdate: { agentId: event.agentId, status: "coding" },
+        }
+      );
     }
 
     case "TEST_RUN": {
-      const nextUsed = state.contextUsed + 5000;
-      const nextState: GameState = {
-        ...state,
-        mp: Math.max(0, state.mp - 5),
-        agents: updateAgentStatus(state.agents, event.agentId, "testing"),
-        questLog: addLog(state.questLog, `Running tests: ${event.testTarget}`, "action", now),
-      };
-      return applyContextPressure(nextState, nextUsed, now, "test execution load");
+      return applyContextLoad(
+        state,
+        now,
+        {
+          contextDelta: 5000,
+          source: "test execution load",
+          logText: `Running tests: ${event.testTarget}`,
+          logType: "action",
+          mpCost: 5,
+          agentUpdate: { agentId: event.agentId, status: "testing" },
+        }
+      );
     }
 
     case "TEST_PASS":
@@ -188,18 +216,19 @@ export function reduceGameEvent(
       };
 
     case "TEST_FAIL": {
-      const nextUsed = state.contextUsed + 10000;
-      const nextState: GameState = {
-        ...state,
-        testsFailed: state.testsFailed + event.count,
-        questLog: addLog(
-          state.questLog,
-          `${event.count} test(s) failed: ${event.errors[0] ?? "unknown error"}`,
-          "error",
-          now
-        ),
-      };
-      return applyContextPressure(nextState, nextUsed, now, "test failure load");
+      return applyContextLoad(
+        {
+          ...state,
+          testsFailed: state.testsFailed + event.count,
+        },
+        now,
+        {
+          contextDelta: 10000,
+          source: "test failure load",
+          logText: `${event.count} test(s) failed: ${event.errors[0] ?? "unknown error"}`,
+          logType: "error",
+        }
+      );
     }
 
     case "SUBAGENT_SPAWN":
@@ -271,24 +300,32 @@ export function reduceGameEvent(
     }
 
     case "THINKING": {
-      const nextUsed = state.contextUsed + 2000;
       const snippet = event.content.slice(0, 60);
-      const nextState: GameState = {
-        ...state,
-        agents: updateAgentStatus(state.agents, "main", "thinking"),
-        questLog: addLog(state.questLog, `Thinking: ${snippet}`, "action", now),
-      };
-      return applyContextPressure(nextState, nextUsed, now, "reasoning load");
+      return applyContextLoad(
+        state,
+        now,
+        {
+          contextDelta: 2000,
+          source: "reasoning load",
+          logText: `Thinking: ${snippet}`,
+          logType: "action",
+          agentUpdate: { agentId: "main", status: "thinking" },
+        }
+      );
     }
 
     case "TOOL_USE": {
-      const nextUsed = state.contextUsed + 3000;
-      const nextState: GameState = {
-        ...state,
-        mp: Math.max(0, state.mp - 1),
-        questLog: addLog(state.questLog, `Using tool: ${event.tool}`, "action", now),
-      };
-      return applyContextPressure(nextState, nextUsed, now, "tool load");
+      return applyContextLoad(
+        state,
+        now,
+        {
+          contextDelta: 3000,
+          source: "tool load",
+          logText: `Using tool: ${event.tool}`,
+          logType: "action",
+          mpCost: 1,
+        }
+      );
     }
 
     case "QUEST_COMPLETE":
@@ -454,5 +491,34 @@ function applyAgentDamage(
           ...agent,
           hp: Math.max(0, agent.hp - damage),
         }
+  );
+}
+
+function applyContextLoad(
+  state: GameState,
+  timestamp: number,
+  options: ContextLoadOptions
+): GameState {
+  const nextState: GameState = {
+    ...state,
+    mp: Math.max(0, state.mp - (options.mpCost ?? 0)),
+    agents: options.agentUpdate
+      ? updateAgentStatus(
+          state.agents,
+          options.agentUpdate.agentId,
+          options.agentUpdate.status
+        )
+      : state.agents,
+    questLog:
+      options.logText && options.logType
+        ? addLog(state.questLog, options.logText, options.logType, timestamp)
+        : state.questLog,
+  };
+
+  return applyContextPressure(
+    nextState,
+    state.contextUsed + Math.max(0, options.contextDelta),
+    timestamp,
+    options.source
   );
 }

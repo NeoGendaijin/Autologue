@@ -278,6 +278,105 @@
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
+/* === COMBO / OVERCLOCK / BUG BREAK Effects === */
+
+/* Combo counter pulse — scales up with each hit */
+@keyframes comboPulse {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.4); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+/* Combo counter idle bob */
+@keyframes comboIdle {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.05) rotate(1deg); }
+  50% { transform: scale(1) rotate(0deg); }
+  75% { transform: scale(1.05) rotate(-1deg); }
+}
+
+/* Screen edge flash on high combos */
+@keyframes edgeFlash {
+  0% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+/* Overclock background speed burst glow */
+@keyframes overclockPulse {
+  0%, 100% { box-shadow: inset 0 0 60px #ffcc0022, inset 0 0 120px #ffcc0011; }
+  50% { box-shadow: inset 0 0 80px #ffcc0044, inset 0 0 160px #ffcc0022; }
+}
+
+/* Afterimage trail for overclock */
+@keyframes afterimage {
+  0% { opacity: 0.6; transform: translateX(0); }
+  100% { opacity: 0; transform: translateX(-30px); }
+}
+
+/* Gold flash for overclock log text */
+@keyframes goldFlash {
+  0%, 100% { color: #ffcc00; text-shadow: 0 0 6px #ffcc0066; }
+  50% { color: #ffe866; text-shadow: 0 0 12px #ffcc00aa, 0 0 20px #ffcc0044; }
+}
+
+/* Overclock banner entrance */
+@keyframes overclockBanner {
+  0% { transform: translateX(-50%) scale(0) rotate(-10deg); opacity: 0; }
+  40% { transform: translateX(-50%) scale(1.3) rotate(3deg); opacity: 1; }
+  60% { transform: translateX(-50%) scale(0.9) rotate(-1deg); }
+  100% { transform: translateX(-50%) scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* Bug Break — enemy whiteout */
+@keyframes bugBreakWhiteout {
+  0% { filter: brightness(1); }
+  15% { filter: brightness(10) saturate(0); }
+  40% { filter: brightness(8) saturate(0); }
+  70% { filter: brightness(3) saturate(0.3); }
+  100% { filter: brightness(1) saturate(1); }
+}
+
+/* Bug Break — stun wobble (enemy stunned) */
+@keyframes stunWobble {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  10% { transform: translateX(-6px) rotate(-4deg); }
+  20% { transform: translateX(6px) rotate(4deg); }
+  30% { transform: translateX(-5px) rotate(-3deg); }
+  40% { transform: translateX(5px) rotate(3deg); }
+  50% { transform: translateX(-3px) rotate(-2deg); }
+  60% { transform: translateX(3px) rotate(2deg); }
+  70% { transform: translateX(-2px) rotate(-1deg); }
+  80% { transform: translateX(2px) rotate(1deg); }
+  90% { transform: translateX(-1px) rotate(0deg); }
+}
+
+/* Bug Break banner */
+@keyframes bugBreakBanner {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  20% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+  50% { transform: translate(-50%, -50%) scale(1.2); }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+/* Combo color cycle for high combos */
+@keyframes comboRainbow {
+  0% { color: #ff4444; text-shadow: 0 0 10px #ff4444, 3px 3px 0 #000; }
+  20% { color: #ffcc00; text-shadow: 0 0 10px #ffcc00, 3px 3px 0 #000; }
+  40% { color: #44ff44; text-shadow: 0 0 10px #44ff44, 3px 3px 0 #000; }
+  60% { color: #44aaff; text-shadow: 0 0 10px #44aaff, 3px 3px 0 #000; }
+  80% { color: #aa44ff; text-shadow: 0 0 10px #aa44ff, 3px 3px 0 #000; }
+  100% { color: #ff4444; text-shadow: 0 0 10px #ff4444, 3px 3px 0 #000; }
+}
+
+/* Guaranteed crit — extra juicy */
+@keyframes superCritFloat {
+  0% { transform: translateY(0) scale(2); opacity: 1; }
+  20% { transform: translateY(-20px) scale(2.5); opacity: 1; }
+  50% { transform: translateY(-50px) scale(2.2); opacity: 1; }
+  100% { transform: translateY(-80px) scale(1.5); opacity: 0; }
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 4px;
