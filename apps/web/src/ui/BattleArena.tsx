@@ -373,7 +373,6 @@ export function BattleArena() {
       position: "relative",
       overflow: "hidden",
       background: "linear-gradient(180deg, #0c0c24 0%, #1a1a3e 35%, #2a1a0e 75%, #1a1208 100%)",
-      borderBottom: `2px solid ${COLORS.panelBorder}`,
       animation: screenShake ? "screenShake 0.5s ease" : undefined,
     }}>
       {/* Seamless loop background: same image x2, scroll and wrap */}
@@ -545,7 +544,7 @@ export function BattleArena() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            transform: "translateY(-14px)",
+            transform: "translateY(-64px)",
             animation: isQuestion ? undefined : "bounceIn 0.4s ease",
           }}>
             <ActiveEnemy

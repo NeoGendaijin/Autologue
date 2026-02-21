@@ -7,15 +7,15 @@ function PixelBar({ current, max, color, darkColor, label, danger }: {
 }) {
   const pct = Math.max(0, Math.min(100, (current / max) * 100));
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-      <span style={{ ...PIXEL_FONT_SM, color, minWidth: "28px" }}>{label}</span>
+    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <span style={{ ...PIXEL_FONT_SM, fontSize: "14px", color, minWidth: "36px" }}>{label}</span>
       <div style={{
         flex: 1,
-        height: "14px",
+        height: "20px",
         background: darkColor,
-        border: `1px solid ${COLORS.borderLight}`,
+        border: `2px solid ${COLORS.borderLight}`,
         position: "relative",
-        minWidth: "120px",
+        minWidth: "160px",
       }}>
         <div style={{
           width: `${pct}%`,
@@ -25,7 +25,7 @@ function PixelBar({ current, max, color, darkColor, label, danger }: {
           animation: danger ? "dangerPulse 1s infinite" : undefined,
         }} />
       </div>
-      <span style={{ ...PIXEL_FONT_SM, color: COLORS.textDim, minWidth: "70px", textAlign: "right" }}>
+      <span style={{ ...PIXEL_FONT_SM, fontSize: "12px", color: COLORS.textDim, minWidth: "80px", textAlign: "right" }}>
         {current}/{max}
       </span>
     </div>
@@ -64,31 +64,35 @@ export function StatusBar() {
   return (
     <div style={{
       background: COLORS.bgDark,
-      borderBottom: `2px solid ${COLORS.panelBorder}`,
-      padding: "12px 20px",
+      borderBottom: `3px solid ${COLORS.panelBorder}`,
+      padding: "22px 28px",
       display: "flex",
       alignItems: "center",
-      gap: "20px",
+      gap: "28px",
+      rowGap: "14px",
+      flexWrap: "wrap",
     }}>
       {/* Title */}
       <div style={{
         ...PIXEL_FONT,
-        fontSize: "24px",
+        fontSize: "34px",
         color: COLORS.gold,
-        letterSpacing: "3px",
+        letterSpacing: "4px",
         whiteSpace: "nowrap",
         animation: "shimmer 4s infinite ease",
       }}>
         AUTOLOGUE
       </div>
 
-      <div style={{ width: "1px", height: "32px", background: COLORS.panelBorder }} />
+      <div style={{ width: "2px", height: "54px", background: COLORS.panelBorder }} />
 
       {/* Quest name */}
       <div style={{
-        ...PIXEL_FONT_SM,
+        ...PIXEL_FONT_MD,
+        fontSize: "16px",
         color: COLORS.parchment,
         flex: 1,
+        minWidth: "240px",
         overflow: "hidden",
         textOverflow: "ellipsis",
         whiteSpace: "nowrap",
@@ -100,7 +104,8 @@ export function StatusBar() {
       {/* Stats row */}
       <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
         <div style={{
-          ...PIXEL_FONT_SM,
+          ...PIXEL_FONT_MD,
+          fontSize: "14px",
           color: COLORS.textMid,
           animation: isActive ? "blink 2s infinite" : undefined,
         }}>
@@ -108,7 +113,8 @@ export function StatusBar() {
         </div>
 
         <div style={{
-          ...PIXEL_FONT_SM,
+          ...PIXEL_FONT_MD,
+          fontSize: "14px",
           color: COLORS.gold,
           animation: state.score > 0 ? "shimmer 3s infinite ease" : undefined,
         }}>
@@ -116,21 +122,22 @@ export function StatusBar() {
         </div>
 
         <div style={{
-          ...PIXEL_FONT_SM,
+          ...PIXEL_FONT_MD,
+          fontSize: "14px",
           color: COLORS.expGold,
           background: COLORS.bgPanel,
-          border: `1px solid ${COLORS.expGoldDark}`,
-          padding: "3px 10px",
+          border: `2px solid ${COLORS.expGoldDark}`,
+          padding: "5px 14px",
           animation: "sway 5s infinite ease",
         }}>
           LV{state.level}
         </div>
       </div>
 
-      <div style={{ width: "1px", height: "32px", background: COLORS.panelBorder }} />
+      <div style={{ width: "2px", height: "54px", background: COLORS.panelBorder }} />
 
       {/* Bars */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "280px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px", minWidth: "360px", flex: "0 1 430px" }}>
         <PixelBar label="HP" current={Math.max(0, contextRemaining)} max={state.contextMax} color={COLORS.hpRed} darkColor={COLORS.hpRedDark} danger={hpPct < 20} />
         <PixelBar label="MP" current={state.mp} max={state.mpMax} color={COLORS.mpBlue} darkColor={COLORS.mpBlueDark} danger={mpPct < 20} />
       </div>

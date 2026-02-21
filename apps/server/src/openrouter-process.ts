@@ -18,12 +18,12 @@ RULES:
 - Use list_files and read_file to explore before writing.
 - After writing code, verify by running tests or the program itself.
 
-IMPORTANT — ASK FOR DIRECTION:
-- Before starting, ask the user a short question about their preference. Example: "Should I use Canvas or DOM for rendering?"
-- After writing the first file, ask about the next step. Example: "Should I add animations or focus on game logic first?"
-- Keep questions SHORT (one sentence) with clear options (A or B style).
-- Ask 2-4 questions total during the quest. Use "Should I" to start each question.
-- Do NOT ask permission to start — just ask about design/approach choices.`;
+IMPORTANT — ASK FOR DIRECTION (sparingly!):
+- Only ask when there is a genuine fork in the road — a real design choice that changes the outcome.
+- Ask at most 1-2 questions total. Most quests need zero or one.
+- Frame each question as a super-short "A or B?" — max 10 words. Example: "Should I use Canvas or DOM?"
+- Never ask for permission to proceed, never ask yes/no confirmation, never ask vague open-ended questions.
+- Do NOT ask before starting. Just start. Only ask mid-quest if you truly need direction.`;
 
 const TOOLS = [
   {
@@ -282,7 +282,7 @@ export class OpenRouterProcess {
 
       const content = msg.content || "";
       const hasQuestion =
-        /should I\b|would you like|do you want|shall I|which.{0,20}prefer|what.{0,20}approach/i.test(content);
+        /should I\b.+\bor\b|do you prefer\b.+\bor\b/i.test(content);
 
       if (hasQuestion) {
         const input = await this.waitForInput();

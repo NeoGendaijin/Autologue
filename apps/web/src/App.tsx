@@ -14,6 +14,33 @@ import { VictoryScreen } from "./ui/VictoryScreen";
 
 import { COLORS } from "./theme";
 
+function MovingDottedDivider() {
+  return (
+    <div
+      style={{
+        height: "20px",
+        flexShrink: 0,
+        display: "flex",
+        alignItems: "center",
+        overflow: "hidden",
+        background: "linear-gradient(180deg, #121223 0%, #0f0f1e 100%)",
+        borderTop: `1px solid ${COLORS.panelBorder}`,
+        borderBottom: `1px solid ${COLORS.panelBorder}`,
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          height: "4px",
+          background: `repeating-linear-gradient(90deg, ${COLORS.gold} 0px, ${COLORS.gold} 8px, transparent 8px, transparent 18px)`,
+          opacity: 0.9,
+          animation: "dottedFlow 0.7s linear infinite",
+        }}
+      />
+    </div>
+  );
+}
+
 export function App() {
   const phase = useGameStore((s) => s.state.phase);
 
@@ -36,20 +63,24 @@ export function App() {
       overflow: "hidden",
       position: "relative",
     }}>
-      {/* Top status bar */}
       <StatusBar />
+      <MovingDottedDivider />
 
-      {/* Battle arena — takes all remaining space */}
-      <BattleArena />
+      <div style={{ flex: 1, minHeight: 0, display: "flex" }}>
+        <BattleArena />
+      </div>
 
-      {/* Bottom bar: Party + Dialogue + Commands — compact row */}
+      <MovingDottedDivider />
+
       <div style={{
-        height: "170px",
-        flexShrink: 0,
+        height: "230px",
+        minHeight: "230px",
+        maxHeight: "230px",
         display: "flex",
-        minHeight: 0,
         overflow: "hidden",
-        borderTop: `2px solid ${COLORS.panelBorder}`,
+        borderTop: `1px solid ${COLORS.panelBorder}`,
+        background: COLORS.bgDark,
+        zIndex: 8,
       }}>
         <PartyList />
         <DialogueBox />

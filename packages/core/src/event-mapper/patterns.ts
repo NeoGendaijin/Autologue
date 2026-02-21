@@ -2,18 +2,11 @@
  * Regex patterns for classifying Gemini CLI events into game actions.
  */
 
-/** Patterns that indicate a question requiring player input */
+/** Patterns that indicate a question requiring player input.
+ *  Keep this tight — only trigger on clear "A or B?" forks. */
 export const QUESTION_PATTERNS: RegExp[] = [
-  /should I\b/i,
-  /would you like/i,
-  /do you want/i,
-  /do you prefer/i,
-  /which (option|approach|method|way|strategy)/i,
-  /please (choose|select|confirm|decide)/i,
-  /what('s| is) your preference/i,
-  /how would you like/i,
-  /shall I\b/i,
-  /can you (clarify|specify|confirm)/i,
+  /should I\b.+\bor\b/i,      // "Should I use X or Y?"
+  /do you prefer\b.+\bor\b/i,  // "Do you prefer X or Y?"
 ];
 
 /** Patterns that indicate subagent spawning */

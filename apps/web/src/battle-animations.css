@@ -218,6 +218,12 @@
   to { background-position-x: -32px; }
 }
 
+/* UI dotted dividers flowing sideways */
+@keyframes dottedFlow {
+  from { background-position-x: 0; }
+  to { background-position-x: -18px; }
+}
+
 /* Seamless horizontal loop (2 tiled panels) */
 @keyframes bgLoopX {
   from { transform: translateX(0); }

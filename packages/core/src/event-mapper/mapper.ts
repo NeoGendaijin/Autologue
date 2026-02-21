@@ -278,32 +278,44 @@ export class EventMapper {
 /**
  * Generate a QuestionEvent from model text that contains a question.
  */
+/** Shorten long model text to just the core question sentence. */
+function shortenQuestion(text: string): string {
+  // Find the sentence containing the actual question (the one with "?")
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  const q = sentences.find((s) => s.includes("?"));
+  const short = (q || sentences[sentences.length - 1]).trim();
+  // Cap at 80 chars
+  return short.length > 80 ? short.slice(0, 77) + "..." : short;
+}
+
 function generateQuestionFromText(text: string): {
   text: string;
   choices: QuestionChoice[];
 } {
-  // Try to extract "A or B" style options from the question
+  const shortText = shortenQuestion(text);
+
+  // Try to extract "A or B" style options
   const orMatch = text.match(/should I (?:use |go with |pick |choose )?(.+?)\s+or\s+(.+?)[\?\.]?$/im);
   if (orMatch) {
     const optA = orMatch[1].replace(/^(use |go with |pick )/i, "").trim();
     const optB = orMatch[2].replace(/[\?\.\s]+$/, "").trim();
     return {
-      text: text.trim(),
+      text: shortText,
       choices: [
-        { label: optA.slice(0, 40), contextCost: 30, quality: "★★", risk: "LOW" },
-        { label: optB.slice(0, 40), contextCost: 30, quality: "★★", risk: "LOW" },
-        { label: "Your call", contextCost: 5, quality: "???", risk: "MED" },
+        { label: optA.slice(0, 25), contextCost: 30, quality: "★★", risk: "LOW" },
+        { label: optB.slice(0, 25), contextCost: 30, quality: "★★", risk: "LOW" },
+        { label: "Any is fine", contextCost: 5, quality: "???", risk: "MED" },
       ],
     };
   }
 
-  // Default: simple yes/no/skip
+  // Fallback (shouldn't trigger often with tighter patterns)
   return {
-    text: text.trim(),
+    text: shortText,
     choices: [
-      { label: "Yes, go ahead", contextCost: 20, quality: "★★", risk: "LOW" },
-      { label: "No, try another way", contextCost: 40, quality: "★★★", risk: "LOW" },
-      { label: "You decide", contextCost: 5, quality: "???", risk: "MED" },
+      { label: "Go for it", contextCost: 20, quality: "★★", risk: "LOW" },
+      { label: "Nah, other way", contextCost: 40, quality: "★★★", risk: "LOW" },
+      { label: "Up to you", contextCost: 5, quality: "???", risk: "MED" },
     ],
   };
 }
