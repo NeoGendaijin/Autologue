@@ -1,171 +1,225 @@
-# Agent Quest
+# Autologue
 
-Turn your AI coding agent into an RPG. Watch it fight through tasks, manage resources, make tactical decisions, and earn ranks.
+Autologue is a coding-agent game UI.  
+Agent actions are turned into RPG-style battle events in real time.
 
-Agent Quest wraps the **Gemini CLI** with real-time game mechanics — context tokens become HP, API calls become MP, sub-agents become party members, and every coding task is a quest.
+## What It Does
 
+- Runs an agent backend (`openrouter` or `gemini-cli`) for each quest.
+- Maps backend events to game events (`FILE_READ`, `TEST_PASS`, `QUESTION`, etc.).
+- Reduces events into a single canonical `GameState`.
+- Streams state to the web client over WebSocket.
+- Shows a battle scene with party, enemy encounters, battle log, and results.
+
+## Screenshots
+
+### Menu
+
+![Autologue Menu](images/menu.png)
+
+### Play Screen
+
+![Autologue Play Screen](images/play_screen.png)
+
+## Current Runtime Architecture
+
+```text
+Agent Backend (OpenRouter or Gemini CLI)
+  -> EventMapper (pattern/action classification)
+  -> Game Reducer (pure state transitions)
+  -> WebSocket session stream
+  -> React Web UI (battle/game overlays)
 ```
-┌─ ░░ AGENT QUEST ░░ ─── ADVENTURE ─── Score: 1450 ─── 02:31 ─── LV.3 ─┐
-│                                                                         │
-│  ┌─ STAGE ──────────────────┐  ┌─ STATS ─────────────────────────────┐ │
-│  │     🤖  🔍  🧪           │  │ ❤️ CONTEXT  ████████░░░░  680K/1M  │ │
-│  │                          │  │ ◆ API MP    ██████████░░  85/100   │ │
-│  │    ▸ IN PROGRESS ▸       │  │ ⭐ EXP      ████░░░░░░░░  40/100   │ │
-│  └──────────────────────────┘  ├─ PARTY ─────────────────────────────┤ │
-│  ┌─ LOG ────────────────────┐  │ 🤖 Main Agent      ████████ 100    │ │
-│  │ ▸ Reading src/index.ts   │  │ 🔍 Scout           ██████░░  80    │ │
-│  │ ✦ 3 tests passed!       │  │ 🧪 Tester          ██████░░  80    │ │
-│  │ ▸ Writing utils.ts      │  ├─ TACTICS ────────────────────────────┤ │
-│  │ ? Agent asks: "Use       │  │ [1] 📋 Summarize  [2] 🔀 Split    │ │
-│  │   Redis or in-memory?"   │  │ [3] 💾 Checkpoint  [4] 🗑️ Forget   │ │
-│  └──────────────────────────┘  └─────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────────────┘
-```
 
-## How It Works
+Notes:
+- Server default backend is `openrouter` (`AGENT_BACKEND` not set).
+- Terminal UI directly uses `GeminiProcess` from core (separate from server backend switching).
 
-1. You describe a coding task (or pick an example quest)
-2. Gemini CLI starts working on it
-3. Its actions stream in as game events — file reads, writes, test runs, errors
-4. When the agent has a question, you choose from 3 options (detailed guidance / brief direction / let it decide)
-5. You can use **tactics** mid-quest to manage context (summarize, split task, checkpoint, forget)
-6. Quest ends with a score, rank (S through F), and achievements
-
-## Game Mechanics
-
-### Resources
-
-| Resource | Icon | What It Represents |
-|----------|------|--------------------|
-| Context | ❤️ | Token usage (1M pool) — your HP |
-| API MP | ◆ | API calls (100 pool) — spent on tools, tests, tactics |
-| EXP | ⭐ | Experience — level up across quests |
-
-### Party System
-
-Agents spawn during quests as party members:
-
-| Type | Icon | Role |
-|------|------|------|
-| Main | 🤖 | Primary coding agent |
-| Scout | 🔍 | File/code search |
-| Tester | 🧪 | Test runner |
-| Scribe | 📝 | Documentation |
-| Fixer | 🔧 | Bug fixing |
-
-### Tactics
-
-Use during a quest to manage resources (costs 15 MP each):
-
-| Tactic | Effect | Context Recovery |
-|--------|--------|-----------------|
-| 📋 Summarize | Compress conversation history | ~100K tokens |
-| 🔀 Split Task | Break into subtasks | ~50K tokens |
-| 💾 Checkpoint | Save current state | — |
-| 🗑️ Forget | Drop old context (risky!) | ~150K tokens |
-
-### Scoring & Ranks
-
-Score is based on context efficiency, speed, test pass rate, and player intervention count. Ranks: **S** > A > B > C > D > F.
-
-### Achievements
-
-- **First Blood** 🏅 — Complete your first quest
-- **Ice Cold** 🧊 — Finish with 90%+ context remaining
-- **Gambler** 🎰 — Never intervene
-- **Squad Leader** 👨‍👩‍👧‍👦 — 4+ sub-agents active at once
-- **Speedrunner** ⚡ — Complete in under 1 minute
-- **From the Brink** 💀 — Win with context below 5%
-
-## Getting Started
+## Quick Start
 
 ### Prerequisites
 
 - Node.js 18+
-- [pnpm](https://pnpm.io/)
-- [Gemini CLI](https://github.com/google-gemini/gemini-cli) installed and authenticated
+- pnpm
+- API credentials (OpenRouter recommended for current default flow)
 
-### Install & Run
+### Install
 
 ```bash
 pnpm install
+```
+
+### Configure `.env`
+
+```bash
+# Backend selector: openrouter (default) or gemini-cli
+AGENT_BACKEND=openrouter
+
+# OpenRouter backend
+OPENROUTER_API_KEY=...
+OPENROUTER_MODEL=google/gemini-2.5-flash-lite
+
+# Gemini CLI backend (optional)
+# AGENT_BACKEND=gemini-cli
+# GEMINI_MODEL=gemini-2.5-flash
+# GEMINI_CLI_PATH=gemini
+```
+
+If `OPENROUTER_MODEL` is omitted, server code falls back to `google/gemini-2.0-flash-001`.
+
+### Run Web + Server
+
+```bash
 pnpm dev
 ```
 
-This starts the server (port 3001) and web UI (Vite dev server). Open the URL shown in the terminal.
+- Server: `http://localhost:3001`
+- Web UI: `http://localhost:5173`
 
-### Terminal UI
-
-For a text-based experience:
+### Run Terminal UI
 
 ```bash
 pnpm dev:terminal
 ```
 
-### Keyboard Controls
+## Game Mechanics (As Implemented)
 
-**During a question:**
-- `A` / `B` / `C` — pick a choice
+### Resources
 
-**During a quest:**
-- `1` — Summarize
-- `2` — Split Task
-- `3` — Checkpoint
-- `4` — Forget
+- Context (`HP`): `contextMax` defaults to `100,000`.
+- MP: defaults to `100`.
+- EXP/Level: level-up based on accumulated EXP.
 
-## Example Quests
+### Game Over Conditions
 
-The `examples/` directory has starter tasks you can launch from the UI:
+- `contextUsed >= contextMax`
+- Main agent HP reaches `0`
+- Fatal error event
 
-| Quest | Description |
-|-------|-------------|
-| 🏓 Ping Pong | Build a Canvas pong game |
-| 🐍 Snake Game | Classic snake in one HTML file |
-| 🧮 Solve Equations | Solve quadratic, linear system, and derivatives in Python |
-| 📋 Todo CLI | Node.js CLI todo app with JSON storage |
-| 📰 AI Report | Research and write a report on AI in 2025 |
-| 🌤️ Weather App | Responsive weather dashboard for 3 cities |
+### Damage Model
+
+- Event-driven context load increases `contextUsed`.
+- HP damage is derived from context deltas (`~3000 tokens per HP`) plus overload penalties.
+- Long initial prompts cause immediate opening damage:
+  - first `180` estimated tokens are free
+  - then `~180 tokens` per extra HP damage
+
+### Revive
+
+- Available in `game-over` phase.
+- Adds `+100,000` context capacity.
+- Restores `+50 HP` to main agent.
+- Restarts agent execution with continuation prompt.
+
+### Tactics
+
+All tactics cost `15 MP`.
+
+- `summarize` -> context recovery `100,000`
+- `split-task` -> context recovery `50,000`
+- `forget` -> context recovery `150,000`
+- `checkpoint` -> no context recovery
+- `delegate` exists in core, but web keyboard/menu currently exposes the first 4 tactics
+
+### Sub-agent Spawn Rules
+
+In current mapper logic, sub-agents can appear by:
+
+- first file-read action -> scout-type spawn
+- third file-write action -> fixer-type spawn
+- first test-run action -> tester-type spawn
+- model message patterns (`spawning agent`, `delegating to`, etc.)
+
+## Controls (Web)
+
+- Question phase: `A / B / C` to answer.
+- Running/question phase: `1 / 2 / 3 / 4` for tactics.
+- Header has a home button (`🏠`) to return to quest board and reset session UI state.
+
+## UI Flow
+
+1. `GuildBoard` overlay in idle state (example selection + custom prompt).
+2. `BattleArena` during run:
+   - random stage background from 3 PNG assets
+   - looping horizontal parallax
+   - split frontline when multiple agents exist
+3. `VictoryScreen` on completion:
+   - score/rank summary
+   - file list + code viewer
+   - iframe preview for generated HTML outputs
+4. `GameOverScreen`:
+   - revive button
+   - return-to-board button
+
+## Examples
+
+Quest prompts are loaded dynamically from `examples/*/README.md` via `/api/examples`.
+
+Current built-in quests include:
+
+- `ping-pong-game`
+- `snake-game`
+- `todo-cli`
+- `weather-dashboard`
+- `research-report`
+- `solve-equations`
+- `mini-sql-engine`
+- `shift-scheduler-optimizer`
+- `advanced-pathfinding-lab`
+
+See `examples/README.md` for a challenge index.
+
+## API and Protocol
+
+### HTTP
+
+- `GET /api/health`
+- `GET /api/examples`
+- `GET /api/session/:id/state`
+- `GET /api/session/:id/events`
+
+### WebSocket (`/ws`)
+
+Client -> server:
+
+- `start-quest`
+- `player-choice`
+- `tactic`
+- `revive`
+- `delete-output`
+
+Server -> client:
+
+- `session-id`
+- `game-event`
+- `state-update`
+- `error`
+- `output-deleted`
 
 ## Project Structure
 
-```
-├── packages/
-│   └── core/                  # Shared game logic & Gemini adapter
-│       ├── game-engine/       # State, events, scoring, tactics
-│       ├── event-mapper/      # Gemini → game event translation
-│       └── gemini-adapter/    # Process management, JSONL parsing
+```text
+.
 ├── apps/
-│   ├── server/                # Express + WebSocket server
-│   ├── web/                   # React + PixiJS web client
-│   └── terminal/              # Ink (React for terminal) client
-└── examples/                  # Standalone example quest tasks
+│   ├── server/      # Express + WS session orchestration + backend process adapters
+│   ├── web/         # React battle UI (status, arena, overlays)
+│   └── terminal/    # Ink-based terminal renderer
+├── packages/
+│   └── core/        # Shared protocol, reducer, mapper, adapter utilities
+└── examples/        # Quest prompt packs (Markdown)
 ```
 
-## Tech Stack
+## Scripts
 
-- **Core:** TypeScript, Zod, EventEmitter3
-- **Server:** Express, ws, Node.js child_process
-- **Web:** React 19, PixiJS 8, Zustand, Vite
-- **Terminal:** Ink 5, React 19
-- **Build:** tsup, pnpm workspaces
+- `pnpm dev` -> server + web
+- `pnpm dev:server`
+- `pnpm dev:web`
+- `pnpm dev:terminal`
+- `pnpm build`
+- `pnpm typecheck`
 
-## Architecture
+## Notes
 
-```
-Gemini CLI (child process)
-    │ stdout: JSONL stream
-    ▼
-EventMapper (pattern matching → GameEvents)
-    │
-    ▼
-Pure Reducer (GameEvent → GameState)
-    │
-    ├─ WebSocket → Web UI (React + PixiJS)
-    └─ Direct state → Terminal UI (Ink)
-```
-
-The core uses a **pure reducer pattern** — `reduceGameEvent(state, event) → state` — with no side effects. Gemini CLI output is parsed via Zod-validated schemas, mapped to game events through pattern matching (question detection, test result parsing, sub-agent spawning), and streamed to clients over WebSocket.
-
-## License
-
-MIT
+- OpenRouter tool execution is intentionally sandboxed to the session output directory.
+- `run_command` in `OpenRouterProcess` returns simulated outputs for common commands.
+- There is no dedicated automated test suite yet; use `pnpm typecheck` as a baseline check.

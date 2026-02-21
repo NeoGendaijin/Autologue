@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { useBattleStore } from "../store/battleStore";
-import { COLORS, PIXEL_FONT_SM, PIXEL_FONT, PIXEL_FONT_MD, AGENT_PIXELS, AGENT_PIXEL_SPRITES, AGENT_SPRITES } from "../theme";
+import { COLORS, PIXEL_FONT_SM, PIXEL_FONT, PIXEL_FONT_MD, AGENT_PIXELS, AGENT_WALK_FRAMES, AGENT_PIXEL_SPRITES, AGENT_SPRITES } from "../theme";
 
 const BACKGROUND_IMAGES = [
   "http://localhost:3001/asset/BackGround-day.png",
@@ -51,11 +51,30 @@ function PixelSprite({ pixels, scale = 3, animation }: {
   );
 }
 
-// --- Main Agent (pixel character) ---
-function MainAgent({ scale = 24, attacking, hit }: { scale?: number; attacking?: boolean; hit?: boolean }) {
+// --- Main Agent (pixel character with walk animation) ---
+function MainAgent({ scale = 24, attacking, hit, walking }: {
+  scale?: number; attacking?: boolean; hit?: boolean; walking?: boolean;
+}) {
+  const [frame, setFrame] = useState(0);
+
+  useEffect(() => {
+    if (!walking || attacking || hit) {
+      setFrame(0);
+      return;
+    }
+    const id = setInterval(() => {
+      setFrame((f) => (f + 1) % AGENT_WALK_FRAMES.length);
+    }, 150);
+    return () => clearInterval(id);
+  }, [walking, attacking, hit]);
+
+  const pixels = walking && !attacking && !hit
+    ? AGENT_WALK_FRAMES[frame]
+    : AGENT_PIXELS;
+
   const anim = attacking ? "slash 0.5s ease" :
                hit ? "agentHit 0.5s ease" :
-               "idle 2s infinite ease";
+               undefined; // no CSS idle bob when walking — the frame swap IS the animation
 
   return (
     <div style={{
@@ -64,7 +83,7 @@ function MainAgent({ scale = 24, attacking, hit }: { scale?: number; attacking?:
         : "drop-shadow(0 0 8px #ffcc0044)",
       transition: "filter 0.3s",
     }}>
-      <PixelSprite pixels={AGENT_PIXELS} scale={scale} animation={anim} />
+      <PixelSprite pixels={pixels} scale={scale} animation={anim} />
     </div>
   );
 }
@@ -515,7 +534,7 @@ export function BattleArena() {
               alignItems: "center",
               animation: isActive ? "walkStride 0.72s infinite ease-in-out" : undefined,
             }}>
-              <MainAgent attacking={agentAttacking} hit={agentHit} />
+              <MainAgent attacking={agentAttacking} hit={agentHit} walking={isActive} />
               <div style={{
                 position: "absolute",
                 top: "100%",
@@ -545,6 +564,7 @@ export function BattleArena() {
                   scale={splitFormation ? 20 : 24}
                   attacking={agentAttacking}
                   hit={agentHit && (i === 0 || !splitFormation)}
+                  walking={isActive}
                 />
                 <div style={{
                   position: "absolute",

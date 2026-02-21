@@ -3,11 +3,13 @@ import { mkdirSync, readFileSync, existsSync } from "node:fs";
 import { resolve, relative, isAbsolute } from "node:path";
 import {
   EventMapper,
+  GeminiProcess,
   createInitialState,
   reduceGameEvent,
   createQuest,
   buildQuestResult,
   executeTactic,
+  type GeminiEvent,
   type GameEvent,
   type GameState,
   type TacticType,
@@ -25,13 +27,33 @@ interface SessionEvents {
   "state-update": (state: GameState) => void;
 }
 
+type AgentBackend = "openrouter" | "gemini-cli";
+
+interface AgentRuntime {
+  start: () => void;
+  getEventStream: () => AsyncGenerator<GeminiEvent>;
+  sendInput: (text: string) => void;
+  kill: () => void;
+  isRunning: () => boolean;
+  filesCreated?: string[];
+}
+
+function resolveAgentBackend(): AgentBackend {
+  const raw = (process.env.AGENT_BACKEND ?? "openrouter").toLowerCase();
+  if (raw === "gemini" || raw === "gemini-cli" || raw === "gemini_cli") {
+    return "gemini-cli";
+  }
+  return "openrouter";
+}
+
 export class GeminiSession extends EventEmitter<SessionEvents> {
-  private process: OpenRouterProcess | null = null;
+  private process: AgentRuntime | null = null;
   private mapper: EventMapper;
   private state: GameState;
   private eventLog: GameEvent[] = [];
   private options: GeminiSessionOptions;
   private outputDir: string = "";
+  private backend: AgentBackend;
 
   constructor(options: GeminiSessionOptions) {
     super();
@@ -39,6 +61,7 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
     this.mapper = new EventMapper();
     this.state = createInitialState();
     this.state = { ...this.state, mode: options.mode };
+    this.backend = resolveAgentBackend();
   }
 
   async start(): Promise<void> {
@@ -68,39 +91,14 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
       return;
     }
 
-    // Create and start the OpenRouter process
-    this.process = new OpenRouterProcess({
-      prompt: this.options.prompt,
-      cwd: this.options.cwd,
-      outputDir: this.outputDir,
-    });
+    // Create and start coding process (OpenRouter or Gemini CLI)
+    console.log(`[session] Agent backend: ${this.backend}`);
+    this.process = this.createProcess(this.options.prompt);
     this.process.start();
-
-    // Iterate the event stream
-    try {
-      for await (const geminiEvent of this.process.getEventStream()) {
-        const gameEvents = this.mapper.map(geminiEvent);
-        for (const gameEvent of gameEvents) {
-          this.applyEvent(gameEvent);
-        }
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown stream error";
-      this.applyEvent({
-        type: "ERROR",
-        message,
-        severity: "fatal",
-      });
-    }
+    await this.consumeProcessEvents();
 
     // Quest finished — emit completion if still running
-    if (this.state.phase === "running" || this.state.phase === "question") {
-      const result = buildQuestResult(this.state);
-      result.outputDir = this.outputDir;
-      result.filesCreated = this.process?.filesCreated ?? [];
-      result.fileContents = this.readOutputFiles(result.filesCreated);
-      this.applyEvent({ type: "QUEST_COMPLETE", result });
-    }
+    this.completeQuestIfActive();
   }
 
   handlePlayerChoice(choiceIndex: number, responseText: string): void {
@@ -146,14 +144,15 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
     // Apply revive event (+100K context)
     this.applyEvent({ type: "REVIVE", addedContext: 100_000 });
 
-    // Restart the OpenRouter process to continue the quest
-    this.process = new OpenRouterProcess({
-      prompt: `Continue the previous task: ${this.options.prompt}`,
-      cwd: this.options.cwd,
-      outputDir: this.outputDir,
-    });
+    // Restart coding process to continue the quest
+    this.process = this.createProcess(`Continue the previous task: ${this.options.prompt}`);
     this.process.start();
+    await this.consumeProcessEvents();
+    this.completeQuestIfActive();
+  }
 
+  private async consumeProcessEvents(): Promise<void> {
+    if (!this.process) return;
     try {
       for await (const geminiEvent of this.process.getEventStream()) {
         const gameEvents = this.mapper.map(geminiEvent);
@@ -169,8 +168,9 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
         severity: "fatal",
       });
     }
+  }
 
-    // Quest finished
+  private completeQuestIfActive(): void {
     if (this.state.phase === "running" || this.state.phase === "question") {
       const result = buildQuestResult(this.state);
       result.outputDir = this.outputDir;
@@ -178,6 +178,23 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
       result.fileContents = this.readOutputFiles(result.filesCreated);
       this.applyEvent({ type: "QUEST_COMPLETE", result });
     }
+  }
+
+  private createProcess(prompt: string): AgentRuntime {
+    if (this.backend === "gemini-cli") {
+      return new GeminiProcess({
+        prompt,
+        cwd: this.options.cwd || this.outputDir,
+        model: process.env.GEMINI_MODEL,
+        binaryPath: process.env.GEMINI_CLI_PATH,
+      });
+    }
+
+    return new OpenRouterProcess({
+      prompt,
+      cwd: this.options.cwd,
+      outputDir: this.outputDir,
+    });
   }
 
   getOutputDir(): string {

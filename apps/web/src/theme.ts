@@ -90,7 +90,93 @@ export const AGENT_PIXELS: (string | null)[][] = [
   [_, _, _, A, A, A, _, _, _, _],
   [_, _, _, L, _, L, _, _, _, _],
   [_, _, _, L, _, L, _, _, _, _],
-  [_, _, L, L, _, L, L, _, _, _],
+  [_, _, _, L, L, L, L, _, _, _],
+];
+
+// 5-frame walk cycle for the main agent
+// RULES: rows 0-9 (upper body) NEVER change. Row 10 (thighs) ALWAYS at col 3,5.
+// Only row 11 (shins) ±1px and row 12 (feet) animate.
+export const AGENT_WALK_FRAMES: (string | null)[][][] = [
+  // Frame 0 — Stand (neutral, both feet flat)
+  [
+    [_, _, _, H, H, H, _, _, _, _],
+    [_, _, H, H, H, H, H, _, _, _],
+    [_, _, H, S, S, S, H, _, _, _],
+    [_, _, _, S, S, S, _, _, _, _],
+    [_, _, _, A, A, A, _, _, _, _],
+    [_, C, A, A, A, A, A, _, _, _],
+    [_, C, A, A, A, A, A, W, _, _],
+    [_, _, A, A, A, A, A, W, _, _],
+    [_, _, _, A, A, A, _, W, _, _],
+    [_, _, _, A, A, A, _, _, _, _],
+    [_, _, _, L, _, L, _, _, _, _], // thighs col 3, 5
+    [_, _, L, _, _, L, _, _, _, _], // shins col 3, 5
+    [_, _, L, _, _, L, L, _, _, _], // feet col 2-3, 5-6
+  ],
+  // Frame 1 — Right heel lifts (preparing to step right)
+  [
+    [_, _, _, H, H, H, _, _, _, _],
+    [_, _, H, H, H, H, H, _, _, _],
+    [_, _, H, S, S, S, H, _, _, _],
+    [_, _, _, S, S, S, _, _, _, _],
+    [_, _, _, A, A, A, _, _, _, _],
+    [_, C, A, A, A, A, A, _, _, _],
+    [_, C, A, A, A, A, A, W, _, _],
+    [_, _, A, A, A, A, A, W, _, _],
+    [_, _, _, A, A, A, _, W, _, _],
+    [_, _, _, A, A, A, _, _, _, _],
+    [_, _, _, L, _, L, L, _, _, _], // thighs col 3, 5 (same)
+    [_, _, L, _, _, _, L, _, _, _], // shins col 3, 5 (same)
+    [_, _, L, L, _, _, L, _, _, _], // left foot flat 2-3, right foot toe-only col 6
+  ],
+  // Frame 2 — Right stride (right shin fwd, left shin back)
+  [
+    [_, _, _, H, H, H, _, _, _, _],
+    [_, _, H, H, H, H, H, _, _, _],
+    [_, _, H, S, S, S, H, _, _, _],
+    [_, _, _, S, S, S, _, _, _, _],
+    [_, _, _, A, A, A, _, _, _, _],
+    [_, C, A, A, A, A, A, _, _, _],
+    [_, C, A, A, A, A, A, W, _, _],
+    [_, _, A, A, A, A, A, W, _, _],
+    [_, _, _, A, A, A, _, W, _, _],
+    [_, _, _, A, A, A, _, _, _, _],
+    [_, _, _, L, _, L, _, _, _, _], // thighs col 3, 5 (SAME)
+    [_, _, , L, _, L, _, _, _, _], // left shin col 2 (back 1), right shin col 6 (fwd 1)
+    [_, _, L, L, _, L, L, _, _, _], // left foot 2-3, right foot 6-7
+  ],
+  // Frame 3 — Left heel lifts (preparing to step left)
+  [
+    [_, _, _, H, H, H, _, _, _, _],
+    [_, _, H, H, H, H, H, _, _, _],
+    [_, _, H, S, S, S, H, _, _, _],
+    [_, _, _, S, S, S, _, _, _, _],
+    [_, _, _, A, A, A, _, _, _, _],
+    [_, C, A, A, A, A, A, _, _, _],
+    [_, C, A, A, A, A, A, W, _, _],
+    [_, _, A, A, A, A, A, W, _, _],
+    [_, _, _, A, A, A, _, W, _, _],
+    [_, _, _, A, A, A, _, _, _, _],
+    [_, _, _, L, _, L, _, _, _, _], // thighs col 3, 5 (same)
+    [_, _, _, L, _, L, _, _, _, _], // shins col 3, 5 (same)
+    [_, _, _, L, _, L, L, _, _, _], // left foot toe-only col 3, right foot flat 5-6
+  ],
+  // Frame 4 — Left stride (left shin fwd, right shin fwd — both push)
+  [
+    [_, _, _, H, H, H, _, _, _, _],
+    [_, _, H, H, H, H, H, _, _, _],
+    [_, _, H, S, S, S, H, _, _, _],
+    [_, _, _, S, S, S, _, _, _, _],
+    [_, _, _, A, A, A, _, _, _, _],
+    [_, C, A, A, A, A, A, _, _, _],
+    [_, C, A, A, A, A, A, W, _, _],
+    [_, _, A, A, A, A, A, W, _, _],
+    [_, _, _, A, A, A, _, W, _, _],
+    [_, _, _, A, A, A, _, _, _, _],
+    [_, _, _, L, _, L, _, _, _, _], // thighs col 3, 5 (SAME)
+    [_, _, _, L, _, _, L, _, _, _], // left shin col 4 (fwd 1), right shin col 6 (fwd 1)
+    [_, _, _, L, L, _, L, _, _, _], // left foot 3-4 (planted), right foot col 6 (toe)
+  ],
 ];
 
 // --- Sub-agent Pixel Sprites ---
