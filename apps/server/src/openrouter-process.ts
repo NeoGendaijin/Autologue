@@ -14,7 +14,10 @@ RULES:
 - When the task is done, say "TASK COMPLETE" and summarize what you did.
 - Be concise but thorough. Write real, complete, working code when writing files.
 - Make multiple tool calls per turn when it makes sense.
-- Always write files — do not just describe code, actually create it.`;
+- Always write files — do not just describe code, actually create it.
+- For complex tasks, break them into phases: Research → Plan → Code → Test.
+- Use list_files and read_file to explore before writing.
+- After writing code, verify by running tests or the program itself.`;
 
 const TOOLS = [
   {

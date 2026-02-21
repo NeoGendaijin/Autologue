@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useGameStore } from "../store/gameStore";
 import { COLORS, PIXEL_FONT, PIXEL_FONT_SM } from "../theme";
 
-function PixelBar({ current, max, color, darkColor, label }: {
-  current: number; max: number; color: string; darkColor: string; label: string;
+function PixelBar({ current, max, color, darkColor, label, danger }: {
+  current: number; max: number; color: string; darkColor: string; label: string; danger?: boolean;
 }) {
   const pct = Math.max(0, Math.min(100, (current / max) * 100));
   return (
@@ -20,8 +20,9 @@ function PixelBar({ current, max, color, darkColor, label }: {
         <div style={{
           width: `${pct}%`,
           height: "100%",
-          background: color,
+          background: danger ? COLORS.fire : color,
           transition: "width 0.5s ease",
+          animation: danger ? "dangerPulse 1s infinite" : undefined,
         }} />
       </div>
       <span style={{ ...PIXEL_FONT_SM, color: COLORS.textDim, minWidth: "50px", textAlign: "right", fontSize: "7px" }}>
@@ -53,6 +54,9 @@ export function StatusBar() {
   }, [state.phase, state.startTime]);
 
   const contextRemaining = state.contextMax - state.contextUsed;
+  const hpPct = (contextRemaining / state.contextMax) * 100;
+  const mpPct = (state.mp / state.mpMax) * 100;
+  const isActive = state.phase === "running" || state.phase === "question";
   const questName = state.currentQuest?.description
     ? state.currentQuest.description.slice(0, 40) + (state.currentQuest.description.length > 40 ? "..." : "")
     : "No active quest";
@@ -71,9 +75,9 @@ export function StatusBar() {
         ...PIXEL_FONT,
         fontSize: "12px",
         color: COLORS.gold,
-        textShadow: `0 0 8px ${COLORS.gold}44`,
         letterSpacing: "2px",
         whiteSpace: "nowrap",
+        animation: "shimmer 4s infinite ease",
       }}>
         AUTOLOGUE
       </div>
@@ -88,6 +92,7 @@ export function StatusBar() {
         overflow: "hidden",
         textOverflow: "ellipsis",
         whiteSpace: "nowrap",
+        animation: isActive ? "pulse 4s infinite ease" : undefined,
       }}>
         {questName}
       </div>
@@ -95,12 +100,20 @@ export function StatusBar() {
       {/* Stats row */}
       <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
         {/* Timer */}
-        <div style={{ ...PIXEL_FONT_SM, color: COLORS.textMid }}>
+        <div style={{
+          ...PIXEL_FONT_SM,
+          color: COLORS.textMid,
+          animation: isActive ? "blink 2s infinite" : undefined,
+        }}>
           {formatTime(elapsed)}
         </div>
 
         {/* Score */}
-        <div style={{ ...PIXEL_FONT_SM, color: COLORS.gold }}>
+        <div style={{
+          ...PIXEL_FONT_SM,
+          color: COLORS.gold,
+          animation: state.score > 0 ? "shimmer 3s infinite ease" : undefined,
+        }}>
           {state.score} G
         </div>
 
@@ -111,6 +124,7 @@ export function StatusBar() {
           background: COLORS.bgPanel,
           border: `1px solid ${COLORS.expGoldDark}`,
           padding: "2px 6px",
+          animation: "sway 5s infinite ease",
         }}>
           LV{state.level}
         </div>
@@ -120,8 +134,8 @@ export function StatusBar() {
 
       {/* Bars */}
       <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: "200px" }}>
-        <PixelBar label="HP" current={Math.max(0, contextRemaining)} max={state.contextMax} color={COLORS.hpRed} darkColor={COLORS.hpRedDark} />
-        <PixelBar label="MP" current={state.mp} max={state.mpMax} color={COLORS.mpBlue} darkColor={COLORS.mpBlueDark} />
+        <PixelBar label="HP" current={Math.max(0, contextRemaining)} max={state.contextMax} color={COLORS.hpRed} darkColor={COLORS.hpRedDark} danger={hpPct < 20} />
+        <PixelBar label="MP" current={state.mp} max={state.mpMax} color={COLORS.mpBlue} darkColor={COLORS.mpBlueDark} danger={mpPct < 20} />
       </div>
     </div>
   );

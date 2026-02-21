@@ -24,6 +24,12 @@ export class EventMapper {
   private lastToolUseCommand: string | null = null;
   private subagentCounter = 0;
 
+  // Auto-spawn tracking
+  private readCount = 0;
+  private writeCount = 0;
+  private testCount = 0;
+  private spawnedTypes = new Set<string>();
+
   /**
    * Transform a Gemini event into game events.
    */
@@ -96,34 +102,69 @@ export class EventMapper {
     this.lastToolUseAction = action;
 
     switch (action) {
-      case "reading":
-        return [
+      case "reading": {
+        this.readCount++;
+        const readEvents: GameEvent[] = [
           {
             type: "FILE_READ",
             path: extractFilePath(event.args),
             agentId: "main",
           },
         ];
+        // First read → spawn Scout
+        if (this.readCount === 1 && !this.spawnedTypes.has("search")) {
+          this.spawnedTypes.add("search");
+          this.subagentCounter++;
+          readEvents.push({
+            type: "SUBAGENT_SPAWN",
+            agent: createSubagent(this.subagentCounter, "search scout reconnaissance"),
+          });
+        }
+        return readEvents;
+      }
 
-      case "writing":
-        return [
+      case "writing": {
+        this.writeCount++;
+        const writeEvents: GameEvent[] = [
           {
             type: "FILE_WRITE",
             path: extractFilePath(event.args),
             agentId: "main",
           },
         ];
+        // After 3 writes → spawn Coder companion
+        if (this.writeCount === 3 && !this.spawnedTypes.has("fix")) {
+          this.spawnedTypes.add("fix");
+          this.subagentCounter++;
+          writeEvents.push({
+            type: "SUBAGENT_SPAWN",
+            agent: createSubagent(this.subagentCounter, "fix patch code forge"),
+          });
+        }
+        return writeEvents;
+      }
 
       case "testing": {
+        this.testCount++;
         const command = extractCommand(event.args);
         this.lastToolUseCommand = command;
-        return [
+        const testEvents: GameEvent[] = [
           {
             type: "TEST_RUN",
             testTarget: command,
             agentId: "main",
           },
         ];
+        // First test → spawn Tester
+        if (this.testCount === 1 && !this.spawnedTypes.has("test")) {
+          this.spawnedTypes.add("test");
+          this.subagentCounter++;
+          testEvents.push({
+            type: "SUBAGENT_SPAWN",
+            agent: createSubagent(this.subagentCounter, "test verify guard"),
+          });
+        }
+        return testEvents;
       }
 
       case "searching":

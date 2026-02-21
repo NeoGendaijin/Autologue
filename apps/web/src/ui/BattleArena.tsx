@@ -1,31 +1,33 @@
 import { useRef, useEffect } from "react";
 import { useGameStore } from "../store/gameStore";
 import { useBattleStore } from "../store/battleStore";
-import { COLORS, PIXEL_FONT_SM, HERO_PIXELS } from "../theme";
+import { COLORS, PIXEL_FONT_SM, PIXEL_FONT, HERO_PIXELS, AGENT_PIXEL_SPRITES, AGENT_SPRITES } from "../theme";
 
-// --- Pixel Hero rendered via CSS box-shadow ---
-function PixelHero({ scale = 3, attacking, hit }: { scale?: number; attacking?: boolean; hit?: boolean }) {
+// --- Generic pixel sprite renderer via CSS box-shadow ---
+function PixelSprite({ pixels, scale = 3, animation }: {
+  pixels: (string | null)[][];
+  scale?: number;
+  animation?: string;
+}) {
   const shadows: string[] = [];
-  for (let r = 0; r < HERO_PIXELS.length; r++) {
-    for (let c = 0; c < HERO_PIXELS[r].length; c++) {
-      const color = HERO_PIXELS[r][c];
+  for (let r = 0; r < pixels.length; r++) {
+    for (let c = 0; c < pixels[r].length; c++) {
+      const color = pixels[r][c];
       if (color) {
         shadows.push(`${c * scale}px ${r * scale}px 0 0 ${color}`);
       }
     }
   }
 
-  const w = 10 * scale;
-  const h = 13 * scale;
+  const cols = pixels[0]?.length ?? 0;
+  const rows = pixels.length;
 
   return (
     <div style={{
-      width: `${w}px`,
-      height: `${h}px`,
+      width: `${cols * scale}px`,
+      height: `${rows * scale}px`,
       position: "relative",
-      animation: attacking ? "slash 0.5s ease" :
-                hit ? "heroHit 0.5s ease" :
-                "idle 2s infinite ease",
+      animation: animation || "idle 2s infinite ease",
     }}>
       <div style={{
         width: `${scale}px`,
@@ -39,8 +41,89 @@ function PixelHero({ scale = 3, attacking, hit }: { scale?: number; attacking?: 
   );
 }
 
+// --- Pixel Hero (main character) ---
+function PixelHero({ scale = 7, attacking, hit }: { scale?: number; attacking?: boolean; hit?: boolean }) {
+  const anim = attacking ? "slash 0.5s ease" :
+               hit ? "heroHit 0.5s ease" :
+               "idle 2s infinite ease";
+
+  return (
+    <div style={{
+      filter: attacking
+        ? "drop-shadow(0 0 16px #ffcc00) drop-shadow(0 0 30px #ffcc0066)"
+        : "drop-shadow(0 0 6px #ffcc0044)",
+      transition: "filter 0.3s",
+    }}>
+      <PixelSprite pixels={HERO_PIXELS} scale={scale} animation={anim} />
+    </div>
+  );
+}
+
+// --- Sub-agent party member sprite ---
+function PartyMemberSprite({ agentType, index }: { agentType: string; index: number }) {
+  const pixels = AGENT_PIXEL_SPRITES[agentType];
+  const sprite = AGENT_SPRITES[agentType] || AGENT_SPRITES.main;
+
+  if (!pixels) {
+    return (
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        animation: "summon 0.6s ease",
+      }}>
+        <div style={{
+          fontSize: "48px",
+          animation: "wobble 3s infinite ease",
+          filter: "drop-shadow(0 0 8px #aa44ff66)",
+        }}>
+          {sprite.emoji}
+        </div>
+        <div style={{
+          ...PIXEL_FONT_SM,
+          fontSize: "9px",
+          color: COLORS.ice,
+          marginTop: "4px",
+          textShadow: "1px 1px 0 #000",
+        }}>
+          {sprite.name}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      animation: "summon 0.6s ease",
+    }}>
+      <div style={{
+        filter: "drop-shadow(0 0 6px #aa44ff66)",
+      }}>
+        <PixelSprite
+          pixels={pixels}
+          scale={5}
+          animation={`idle ${2.2 + index * 0.3}s infinite ease`}
+        />
+      </div>
+      <div style={{
+        ...PIXEL_FONT_SM,
+        fontSize: "8px",
+        color: COLORS.ice,
+        marginTop: "4px",
+        textShadow: "1px 1px 0 #000",
+        animation: "pulse 3s infinite ease",
+      }}>
+        {sprite.name}
+      </div>
+    </div>
+  );
+}
+
 // --- Defeated enemy marker ---
-function DefeatedMarker({ emoji }: { emoji: string }) {
+function DefeatedMarker({ emoji, index }: { emoji: string; index: number }) {
   return (
     <div style={{
       display: "flex",
@@ -48,15 +131,22 @@ function DefeatedMarker({ emoji }: { emoji: string }) {
       alignItems: "center",
       opacity: 0.35,
       filter: "grayscale(0.8)",
+      animation: `defeatSpin 0.5s ease forwards`,
+      animationDelay: `${index * 0.05}s`,
     }}>
-      <div style={{ fontSize: "20px", transform: "rotate(15deg)" }}>{emoji}</div>
+      <div style={{
+        fontSize: "32px",
+        transform: "rotate(15deg)",
+        animation: "sway 4s infinite ease-in-out",
+        animationDelay: `${index * 0.3}s`,
+      }}>{emoji}</div>
       <div style={{
         ...PIXEL_FONT_SM,
-        fontSize: "6px",
+        fontSize: "8px",
         color: COLORS.healGreen,
-        marginTop: "2px",
+        marginTop: "3px",
       }}>
-{"\u2713"}
+        {"\u2713"}
       </div>
     </div>
   );
@@ -71,22 +161,26 @@ function ActiveEnemy({ emoji, name, color, isHit }: {
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-      animation: isHit ? "enemyHit 0.5s ease" : "idle 2.5s infinite ease",
+      animation: isHit ? "enemyHit 0.5s ease" : "enemyIdle 2.5s infinite ease",
     }}>
       <div style={{
-        fontSize: "40px",
-        filter: isHit ? "brightness(2)" : undefined,
+        fontSize: "72px",
+        filter: isHit
+          ? "brightness(2) drop-shadow(0 0 20px #ff4444)"
+          : "drop-shadow(0 0 10px #00000088) drop-shadow(0 0 20px #ff444422)",
         transition: "filter 0.1s",
+        animation: isHit ? undefined : "wobble 3s infinite ease-in-out",
       }}>
         {emoji}
       </div>
       <div style={{
         ...PIXEL_FONT_SM,
-        fontSize: "7px",
+        fontSize: "10px",
         color,
-        marginTop: "4px",
-        textShadow: "1px 1px 0 #000",
+        marginTop: "6px",
+        textShadow: `1px 1px 0 #000, 0 0 8px ${color}44`,
         whiteSpace: "nowrap",
+        animation: "pulse 2s infinite ease",
       }}>
         {name}
       </div>
@@ -94,18 +188,40 @@ function ActiveEnemy({ emoji, name, color, isHit }: {
   );
 }
 
+// --- Twinkling star ---
+function Star({ index }: { index: number }) {
+  const left = (index * 37 + 13) % 100;
+  const top = (index * 23 + 7) % 60;
+  const size = 1 + (index % 3);
+  const duration = 2 + (index % 4) * 0.7;
+  const delay = (index * 0.4) % 3;
+
+  return (
+    <div style={{
+      position: "absolute",
+      left: `${left}%`,
+      top: `${top}%`,
+      width: `${size}px`,
+      height: `${size}px`,
+      background: "#ffffff",
+      borderRadius: size > 1 ? "50%" : undefined,
+      animation: `twinkle ${duration}s ${delay}s infinite ease-in-out`,
+    }} />
+  );
+}
+
 export function BattleArena() {
   const phase = useGameStore((s) => s.state.phase);
+  const agents = useGameStore((s) => s.state.agents);
   const encounters = useBattleStore((s) => s.encounters);
-  const currentIdx = useBattleStore((s) => s.currentIdx);
   const damageNumbers = useBattleStore((s) => s.damageNumbers);
   const screenShake = useBattleStore((s) => s.screenShake);
   const heroAttacking = useBattleStore((s) => s.heroAttacking);
   const heroHit = useBattleStore((s) => s.heroHit);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const subAgents = agents.filter((a) => a.id !== "main");
 
-  // Auto-scroll to keep the action visible
   useEffect(() => {
     if (scrollRef.current) {
       const el = scrollRef.current;
@@ -120,99 +236,144 @@ export function BattleArena() {
   return (
     <div style={{
       width: "100%",
-      height: "300px",
+      flex: 1,
+      minHeight: "200px",
       position: "relative",
       overflow: "hidden",
-      background: `linear-gradient(180deg, #0c0c24 0%, #1a1a3e 40%, #2a1a0e 70%, #1a1208 100%)`,
+      background: `linear-gradient(180deg, #0c0c24 0%, #1a1a3e 35%, #2a1a0e 75%, #1a1208 100%)`,
       borderBottom: `2px solid ${COLORS.panelBorder}`,
       animation: screenShake ? "screenShake 0.5s ease" : undefined,
     }}>
-      {/* Stars */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: "50%", overflow: "hidden", opacity: 0.5 }}>
-        {[...Array(25)].map((_, i) => (
-          <div key={i} style={{
-            position: "absolute",
-            left: `${(i * 37 + 13) % 100}%`,
-            top: `${(i * 23 + 7) % 60}%`,
-            width: "2px",
-            height: "2px",
-            background: "#ffffff",
-            opacity: 0.2 + (i % 3) * 0.25,
-          }} />
+      {/* Twinkling Stars */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: "50%", overflow: "hidden" }}>
+        {[...Array(35)].map((_, i) => (
+          <Star key={i} index={i} />
         ))}
       </div>
 
-      {/* Ground */}
+      {/* Animated ground */}
       <div style={{
         position: "absolute",
         bottom: 0,
         left: 0,
         right: 0,
-        height: "60px",
+        height: "80px",
         background: "linear-gradient(180deg, #2a1a0e 0%, #1a1208 100%)",
         borderTop: `2px solid #3a2a1e`,
       }}>
-        {/* Path dots */}
         <div style={{
           position: "absolute",
-          top: "10px",
+          top: "14px",
           left: 0,
           right: 0,
-          height: "2px",
-          background: `repeating-linear-gradient(90deg, #3a2a1e 0px, #3a2a1e 8px, transparent 8px, transparent 16px)`,
+          height: "3px",
+          background: `repeating-linear-gradient(90deg, #3a2a1e 0px, #3a2a1e 10px, transparent 10px, transparent 20px)`,
+          animation: isActive ? "groundScroll 1s linear infinite" : undefined,
         }} />
+        {isActive && [...Array(8)].map((_, i) => (
+          <div key={i} style={{
+            position: "absolute",
+            bottom: `${10 + (i * 9) % 40}px`,
+            left: `${(i * 13 + 5) % 100}%`,
+            width: "3px",
+            height: "3px",
+            background: "#3a2a1e",
+            animation: `twinkle ${2 + i * 0.5}s ${i * 0.3}s infinite ease`,
+            opacity: 0.4,
+          }} />
+        ))}
       </div>
 
-      {/* === Side-scrolling battle scene === */}
+      {/* === Main battle scene — centered vertically === */}
       <div ref={scrollRef} style={{
         position: "absolute",
-        bottom: "60px",
+        bottom: "80px",
         left: 0,
         right: 0,
-        height: "200px",
+        top: 0,
         display: "flex",
-        alignItems: "flex-end",
+        alignItems: "center",
+        justifyContent: "center",
         overflowX: "hidden",
-        padding: "0 20px",
+        padding: "0 40px",
+        gap: "20px",
       }}>
-        {/* Defeated encounters on the left */}
-        {defeated.map((enc) => (
-          <div key={enc.id} style={{
-            flexShrink: 0,
-            marginRight: "16px",
-            paddingBottom: "8px",
-          }}>
-            <DefeatedMarker emoji={enc.emoji} />
-          </div>
-        ))}
 
-        {/* Hero character */}
+        {/* Left cluster: defeated markers */}
+        {defeated.length > 0 && (
+          <div style={{
+            flexShrink: 0,
+            display: "flex",
+            gap: "12px",
+            alignItems: "center",
+          }}>
+            {defeated.map((enc, i) => (
+              <DefeatedMarker key={enc.id} emoji={enc.emoji} index={i} />
+            ))}
+          </div>
+        )}
+
+        {/* Party formation: sub-agents stacked behind hero */}
+        {subAgents.length > 0 && (
+          <div style={{
+            flexShrink: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+            alignItems: "center",
+          }}>
+            {subAgents.map((agent, i) => (
+              <PartyMemberSprite key={agent.id} agentType={agent.type} index={i} />
+            ))}
+          </div>
+        )}
+
+        {/* HERO — front and center */}
         <div style={{
           flexShrink: 0,
-          marginRight: active ? "30px" : "0",
-          paddingBottom: "4px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
         }}>
-          <PixelHero scale={4} attacking={heroAttacking} hit={heroHit} />
+          <PixelHero scale={7} attacking={heroAttacking} hit={heroHit} />
           <div style={{
-            ...PIXEL_FONT_SM,
-            fontSize: "7px",
+            ...PIXEL_FONT,
+            fontSize: "10px",
             color: COLORS.gold,
-            marginTop: "4px",
-            textShadow: "1px 1px 0 #000",
+            marginTop: "8px",
+            animation: "shimmer 3s infinite ease",
           }}>
             HERO
           </div>
         </div>
 
-        {/* Current active enemy */}
+        {/* VS gap */}
         {active && (
           <div style={{
             flexShrink: 0,
-            paddingBottom: "8px",
+            width: "60px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}>
+            <div style={{
+              ...PIXEL_FONT,
+              fontSize: "14px",
+              color: COLORS.fire,
+              animation: "pulse 1.5s infinite ease",
+              textShadow: `0 0 10px ${COLORS.fire}66, 2px 2px 0 #000`,
+            }}>
+              VS
+            </div>
+          </div>
+        )}
+
+        {/* Active enemy — BIG */}
+        {active && (
+          <div style={{
+            flexShrink: 0,
             position: "relative",
+            animation: "bounceIn 0.4s ease",
           }}>
             <ActiveEnemy
               emoji={active.emoji}
@@ -220,30 +381,30 @@ export function BattleArena() {
               color={active.color}
               isHit={heroAttacking}
             />
-            {/* Description label */}
             <div style={{
               ...PIXEL_FONT_SM,
-              fontSize: "6px",
+              fontSize: "8px",
               color: COLORS.textDim,
               textAlign: "center",
-              marginTop: "2px",
-              maxWidth: "80px",
+              marginTop: "4px",
+              maxWidth: "120px",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
+              animation: "slideInLeft 0.3s ease",
             }}>
-              {active.description.replace(/^(Writing|Reading|Using tool:\s*\w+|Running tests:?|Generating code for)\s*/i, "").slice(0, 20)}
+              {active.description.replace(/^(Writing|Reading|Using tool:\s*\w+|Running tests:?|Generating code for)\s*/i, "").slice(0, 25)}
             </div>
           </div>
         )}
 
-        {/* Upcoming placeholder enemies */}
+        {/* Waiting placeholder */}
         {isActive && !active && (
           <div style={{
             flexShrink: 0,
-            paddingBottom: "8px",
             opacity: 0.2,
-            fontSize: "24px",
+            fontSize: "36px",
+            animation: "float 2s infinite ease",
           }}>
             {"..."}
           </div>
@@ -254,12 +415,12 @@ export function BattleArena() {
       {damageNumbers.map((dmg) => (
         <div key={dmg.id} style={{
           position: "absolute",
-          right: "30%",
-          bottom: "140px",
-          ...PIXEL_FONT_SM,
-          fontSize: dmg.isCrit ? "18px" : "12px",
+          right: "32%",
+          top: "30%",
+          ...PIXEL_FONT,
+          fontSize: dmg.isCrit ? "28px" : "18px",
           color: dmg.color,
-          textShadow: `0 0 6px ${dmg.color}, 2px 2px 0 #000`,
+          textShadow: `0 0 10px ${dmg.color}, 3px 3px 0 #000`,
           animation: `${dmg.isCrit ? "critFloat" : "damageFloat"} 1s forwards ease-out`,
           pointerEvents: "none",
           zIndex: 10,
@@ -272,13 +433,29 @@ export function BattleArena() {
       {encounters.length > 0 && (
         <div style={{
           position: "absolute",
-          top: "8px",
-          right: "12px",
+          top: "10px",
+          right: "16px",
           ...PIXEL_FONT_SM,
-          fontSize: "7px",
+          fontSize: "9px",
           color: COLORS.textDim,
+          animation: "pulse 3s infinite ease",
         }}>
           {defeated.length}/{encounters.length} defeated
+        </div>
+      )}
+
+      {/* Party count */}
+      {subAgents.length > 0 && (
+        <div style={{
+          position: "absolute",
+          top: "10px",
+          left: "16px",
+          ...PIXEL_FONT_SM,
+          fontSize: "9px",
+          color: COLORS.poison,
+          animation: "pulse 3s infinite ease",
+        }}>
+          Party: {agents.length}
         </div>
       )}
 
@@ -289,11 +466,12 @@ export function BattleArena() {
           top: "50%",
           left: "50%",
           transform: "translate(-50%, -50%)",
-          ...PIXEL_FONT_SM,
-          fontSize: "10px",
+          ...PIXEL_FONT,
+          fontSize: "14px",
           color: COLORS.textDim,
           textShadow: "2px 2px 0 #000",
-          letterSpacing: "3px",
+          letterSpacing: "4px",
+          animation: phase === "idle" ? "float 3s infinite ease, pulse 4s infinite ease" : undefined,
         }}>
           {phase === "idle" ? "AWAITING ORDERS..." :
            phase === "game-over" ? "GAME OVER" : ""}

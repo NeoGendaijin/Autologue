@@ -15,6 +15,8 @@ export function PartyList() {
   const level = useGameStore((s) => s.state.level);
   const exp = useGameStore((s) => s.state.exp);
   const mode = useGameStore((s) => s.state.mode);
+  const phase = useGameStore((s) => s.state.phase);
+  const isActive = phase === "running" || phase === "question";
 
   return (
     <div style={{
@@ -24,6 +26,7 @@ export function PartyList() {
       display: "flex",
       flexDirection: "column",
       gap: "6px",
+      animation: isActive ? "borderGlow 5s infinite ease" : undefined,
     }}>
       {/* Header */}
       <div style={{
@@ -32,19 +35,27 @@ export function PartyList() {
         letterSpacing: "2px",
         borderBottom: `1px solid ${COLORS.panelBorder}`,
         paddingBottom: "4px",
+        animation: isActive ? "pulse 3s infinite ease" : undefined,
       }}>
         PARTY
       </div>
 
       {/* Party members */}
       {agents.length === 0 && (
-        <div style={{ ...PIXEL_FONT_SM, color: COLORS.textDim, textAlign: "center", padding: "8px 0" }}>
+        <div style={{
+          ...PIXEL_FONT_SM,
+          color: COLORS.textDim,
+          textAlign: "center",
+          padding: "8px 0",
+          animation: "float 3s infinite ease",
+        }}>
           No party members
         </div>
       )}
-      {agents.map((agent) => {
+      {agents.map((agent, i) => {
         const sprite = AGENT_SPRITES[agent.type] || AGENT_SPRITES.main;
         const statusInfo = STATUS_LABELS[agent.status] || STATUS_LABELS.idle;
+        const isMain = agent.id === "main";
         return (
           <div key={agent.id} style={{
             display: "flex",
@@ -53,8 +64,15 @@ export function PartyList() {
             padding: "3px 4px",
             background: agent.status !== "idle" ? `${COLORS.borderLight}33` : "transparent",
             border: `1px solid ${agent.status !== "idle" ? COLORS.borderLight : "transparent"}`,
+            animation: isMain ? undefined : "summonFlash 0.8s ease, bounceIn 0.5s ease",
+            animationDelay: isMain ? undefined : `${i * 0.1}s`,
           }}>
-            <span style={{ fontSize: "16px" }}>{sprite.emoji}</span>
+            <span style={{
+              fontSize: "16px",
+              animation: agent.status !== "idle" ? "wobble 2s infinite ease" : "sway 4s infinite ease",
+            }}>
+              {sprite.emoji}
+            </span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ ...PIXEL_FONT_SM, color: COLORS.parchment, fontSize: "7px" }}>
                 {sprite.name}
@@ -69,8 +87,9 @@ export function PartyList() {
                 <div style={{
                   width: `${agent.hp}%`,
                   height: "100%",
-                  background: COLORS.hpRed,
+                  background: agent.hp < 30 ? COLORS.fire : COLORS.hpRed,
                   transition: "width 0.3s",
+                  animation: agent.hp < 30 ? "dangerPulse 1s infinite" : undefined,
                 }} />
               </div>
             </div>
@@ -80,6 +99,8 @@ export function PartyList() {
               color: statusInfo.color,
               minWidth: "30px",
               textAlign: "right",
+              animation: agent.status === "thinking" ? "blink 1.5s infinite" :
+                         agent.status === "coding" ? "pulse 1s infinite" : undefined,
             }}>
               {statusInfo.label}
             </span>
@@ -118,6 +139,7 @@ export function PartyList() {
           color: COLORS.poison,
           textAlign: "center",
           marginTop: "2px",
+          animation: "sway 5s infinite ease",
         }}>
           {mode === "expert" ? "\uD83E\uDDE0 EXPERT" : "\uD83C\uDFB2 ADVENTURE"}
         </div>

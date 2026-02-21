@@ -14,7 +14,7 @@ const TACTICS: TacticDef[] = [
   { icon: "\uD83D\uDCCB", label: "Summarize", rpgName: "FOCUS", tactic: "summarize" },
   { icon: "\uD83D\uDD00", label: "Split Task", rpgName: "SPLIT", tactic: "split-task" },
   { icon: "\uD83D\uDCBE", label: "Checkpoint", rpgName: "SAVE", tactic: "checkpoint" },
-  { icon: "\uD83D\uDDD1\uFE0F", label: "Forget", rpgName: "PURGE", tactic: "forget" },
+  { icon: "\uD83D\uDD12", label: "Forget", rpgName: "PURGE", tactic: "forget" },
 ];
 
 export function CommandMenu() {
@@ -36,14 +36,16 @@ export function CommandMenu() {
       display: "flex",
       flexDirection: "column",
       gap: "2px",
+      animation: isQuestion ? "borderGlow 2s infinite ease" : undefined,
     }}>
       {/* Header */}
       <div style={{
         ...PIXEL_FONT_SM,
-        color: COLORS.textDim,
+        color: isQuestion ? COLORS.gold : COLORS.textDim,
         letterSpacing: "2px",
         marginBottom: "4px",
         fontSize: "7px",
+        animation: isQuestion ? "shimmer 2s infinite ease" : undefined,
       }}>
         {isQuestion ? "CHOOSE ACTION" : "COMMANDS"}
       </div>
@@ -60,6 +62,7 @@ export function CommandMenu() {
             background: COLORS.bgDark,
             border: `1px solid ${COLORS.borderLight}`,
             lineHeight: "14px",
+            animation: "slideInLeft 0.3s ease",
           }}>
             &ldquo;{pendingQuestion.text}&rdquo;
           </div>
@@ -82,9 +85,16 @@ export function CommandMenu() {
                 textAlign: "left",
                 ...PIXEL_FONT_SM,
                 fontSize: "8px",
+                animation: `bounceIn 0.3s ease`,
+                animationDelay: `${i * 0.1}s`,
+                animationFillMode: "both",
               }}
             >
-              <span style={{ color: COLORS.selectCursor, minWidth: "8px" }}>
+              <span style={{
+                color: COLORS.selectCursor,
+                minWidth: "8px",
+                animation: hoveredIdx === i ? "wobble 0.5s infinite" : undefined,
+              }}>
                 {hoveredIdx === i ? "\u25B6" : " "}
               </span>
               <span style={{ flex: 1 }}>{choice.label}</span>
@@ -122,10 +132,19 @@ export function CommandMenu() {
                 fontSize: "8px",
               }}
             >
-              <span style={{ color: COLORS.selectCursor, minWidth: "8px" }}>
+              <span style={{
+                color: COLORS.selectCursor,
+                minWidth: "8px",
+                animation: hoveredIdx === i && isActive ? "wobble 0.5s infinite" : undefined,
+              }}>
                 {hoveredIdx === i && isActive ? "\u25B6" : " "}
               </span>
-              <span>{t.icon}</span>
+              <span style={{
+                animation: isActive ? "sway 4s infinite ease" : undefined,
+                animationDelay: `${i * 0.2}s`,
+              }}>
+                {t.icon}
+              </span>
               <span style={{ flex: 1 }}>{t.rpgName}</span>
               <span style={{ color: COLORS.textDim, fontSize: "6px" }}>{t.label}</span>
             </button>

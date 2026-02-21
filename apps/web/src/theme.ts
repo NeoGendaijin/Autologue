@@ -93,6 +93,69 @@ export const HERO_PIXELS: (string | null)[][] = [
   [_, _, L, L, _, L, L, _, _, _],
 ];
 
+// --- Sub-agent Pixel Sprites ---
+// Scout (search) — 8x10, hooded figure with a crystal ball
+const Sc = "#44aaff"; // scout cloak
+const Sg = "#88ddff"; // scout glow
+const Se = "#aaeeff"; // scout eye
+
+export const SCOUT_PIXELS: (string | null)[][] = [
+  [_, _, Sc, Sc, Sc, _, _, _],
+  [_, Sc, Sc, Sc, Sc, Sc, _, _],
+  [_, Sc, Se, S, Se, Sc, _, _],
+  [_, _, S, S, S, _, _, _],
+  [_, Sc, Sc, Sc, Sc, Sc, _, _],
+  [Sc, Sc, Sc, Sc, Sc, Sc, Sc, _],
+  [_, _, Sc, Sc, Sc, _, _, _],
+  [_, _, Sg, _, Sg, _, _, _],
+  [_, _, L, _, L, _, _, _],
+  [_, L, L, _, L, L, _, _],
+];
+
+// Guard (test) — 8x10, shield-bearing warrior
+const Gs = "#4488cc"; // guard shield
+const Gd = "#336699"; // guard dark
+const Ga = "#5599dd"; // guard armor
+
+export const GUARD_PIXELS: (string | null)[][] = [
+  [_, _, H, H, H, _, _, _],
+  [_, H, H, H, H, H, _, _],
+  [_, H, S, S, S, H, _, _],
+  [_, _, S, S, S, _, _, _],
+  [Gs, Ga, Ga, Ga, Ga, Ga, _, _],
+  [Gs, Gs, Ga, Ga, Ga, Ga, _, _],
+  [Gs, Gs, Ga, Ga, Ga, _, _, _],
+  [Gs, _, Ga, Ga, Ga, _, _, _],
+  [_, _, L, _, L, _, _, _],
+  [_, L, L, _, L, L, _, _],
+];
+
+// Smith (fix) — 8x10, dwarf with hammer
+const Sm = "#cc8844"; // smith hammer
+const Sd = "#aa6633"; // smith dark
+const Sa = "#886644"; // smith apron
+
+export const SMITH_PIXELS: (string | null)[][] = [
+  [_, _, S, S, S, _, _, _],
+  [_, S, S, S, S, S, _, _],
+  [_, Sd, S, S, S, Sd, _, _],
+  [_, _, S, S, S, _, _, _],
+  [_, Sa, Sa, Sa, Sa, Sa, Sm, _],
+  [_, Sa, Sa, Sa, Sa, Sa, Sm, _],
+  [_, _, Sa, Sa, Sa, _, Sm, _],
+  [_, _, Sa, Sa, Sa, _, _, _],
+  [_, _, L, _, L, _, _, _],
+  [_, L, L, _, L, L, _, _],
+];
+
+// Map agent type → pixel array
+export const AGENT_PIXEL_SPRITES: Record<string, (string | null)[][]> = {
+  search: SCOUT_PIXELS,
+  test: GUARD_PIXELS,
+  fix: SMITH_PIXELS,
+  docs: SCOUT_PIXELS, // reuse scout for scribe
+};
+
 // --- Enemy types based on tool/action ---
 export interface EnemyDef {
   name: string;

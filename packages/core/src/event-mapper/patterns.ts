@@ -77,6 +77,7 @@ export const FILE_WRITE_TOOLS = new Set([
 
 /** Tool names that map to shell execution */
 export const SHELL_TOOLS = new Set([
+  "run_command",
   "run_shell_command",
   "run_shell",
   "RunShellCommand",

@@ -53,12 +53,13 @@ export function App() {
           flexDirection: "column",
           minWidth: 0,
         }}>
-          {/* Battle scene */}
+          {/* Battle scene — takes most of the space */}
           <BattleArena />
 
-          {/* Bottom section: Dialogue + Commands */}
+          {/* Bottom section: Dialogue + Commands — compact */}
           <div style={{
-            flex: 1,
+            height: "120px",
+            flexShrink: 0,
             display: "flex",
             minHeight: 0,
             overflow: "hidden",
@@ -73,10 +74,11 @@ export function App() {
 
         {/* Right sidebar: Party */}
         <div style={{
-          width: "180px",
+          width: "160px",
           display: "flex",
           flexDirection: "column",
           borderLeft: `2px solid ${COLORS.panelBorder}`,
+          overflow: "auto",
         }}>
           <PartyList />
         </div>

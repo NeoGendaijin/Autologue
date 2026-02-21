@@ -73,10 +73,12 @@
   75% { transform: translateY(-6px); }
 }
 
-/* Idle breathing */
+/* Idle breathing — more wobbly */
 @keyframes idle {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
+  0%, 100% { transform: translateY(0) rotate(0); }
+  25% { transform: translateY(-3px) rotate(0.5deg); }
+  50% { transform: translateY(-5px) rotate(0); }
+  75% { transform: translateY(-2px) rotate(-0.5deg); }
 }
 
 /* Charge/thinking glow */
@@ -122,6 +124,114 @@
   0% { filter: brightness(1); }
   30% { filter: brightness(1.5) hue-rotate(80deg); }
   100% { filter: brightness(1); }
+}
+
+/* === NEW: Wiggly / Alive Animations === */
+
+/* Star twinkle */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.15; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.5); }
+}
+
+/* Wobble for enemies and UI elements */
+@keyframes wobble {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  15% { transform: translateX(-2px) rotate(-2deg); }
+  30% { transform: translateX(2px) rotate(1deg); }
+  45% { transform: translateX(-1px) rotate(-1deg); }
+  60% { transform: translateX(1px) rotate(0.5deg); }
+  75% { transform: translateX(-0.5px) rotate(-0.3deg); }
+}
+
+/* Bouncy entrance */
+@keyframes bounceIn {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.15); opacity: 1; }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Gentle wave / sway */
+@keyframes sway {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(3deg); }
+  75% { transform: rotate(-3deg); }
+}
+
+/* Float up and down */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Sparkle/shimmer for gold text */
+@keyframes shimmer {
+  0% { text-shadow: 0 0 4px #ffcc0044, 2px 2px 0 #000; }
+  25% { text-shadow: 0 0 12px #ffcc00aa, 2px 2px 0 #000, 0 0 20px #ffcc0044; }
+  50% { text-shadow: 0 0 6px #ffcc0066, 2px 2px 0 #000; }
+  75% { text-shadow: 0 0 16px #ffcc00bb, 2px 2px 0 #000, 0 0 24px #ffcc0055; }
+  100% { text-shadow: 0 0 4px #ffcc0044, 2px 2px 0 #000; }
+}
+
+/* Enemy idle — more aggressive bob */
+@keyframes enemyIdle {
+  0%, 100% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-6px) scale(1.02); }
+  60% { transform: translateY(-2px) scale(0.98); }
+}
+
+/* Pulse scale for active items */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* HP bar danger pulse */
+@keyframes dangerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Battle log message slide in from left */
+@keyframes slideInLeft {
+  from { transform: translateX(-15px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Party member summon flash */
+@keyframes summonFlash {
+  0% { background: transparent; }
+  20% { background: #aa44ff33; }
+  100% { background: transparent; }
+}
+
+/* Defeated X mark spin */
+@keyframes defeatSpin {
+  from { transform: rotate(0deg) scale(0); opacity: 0; }
+  to { transform: rotate(360deg) scale(1); opacity: 0.35; }
+}
+
+/* Ground scroll parallax feel */
+@keyframes groundScroll {
+  from { background-position-x: 0; }
+  to { background-position-x: -32px; }
+}
+
+/* Border glow animation for active panels */
+@keyframes borderGlow {
+  0%, 100% { border-color: #2a2a4a; }
+  50% { border-color: #5a5aaa; }
+}
+
+/* Text color cycle for special events */
+@keyframes rainbowText {
+  0% { color: #ff4444; }
+  20% { color: #ffcc00; }
+  40% { color: #44ff44; }
+  60% { color: #44aaff; }
+  80% { color: #aa44ff; }
+  100% { color: #ff4444; }
 }
 
 /* Scrollbar styling */

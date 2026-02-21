@@ -241,7 +241,12 @@ useGameStore.subscribe((state) => {
           break;
         }
         case "spawn": {
-          battle.addBattleLog("A new ally joins the fight!");
+          // Extract ally name from text like "Summoned Scout-1!"
+          const allyMatch = entry.text.match(/Summoned\s+(.+?)!/);
+          const allyName = allyMatch ? allyMatch[1] : "a new ally";
+          battle.addBattleLog(`${allyName} joins the fight!`);
+          // Dramatic summon effect
+          battle.addDamageNumber("\u2728", false, "#aa44ff");
           break;
         }
         case "question": {

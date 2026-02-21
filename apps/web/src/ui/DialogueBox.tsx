@@ -25,6 +25,7 @@ export function DialogueBox() {
       minHeight: 0,
       display: "flex",
       flexDirection: "column",
+      animation: visibleLog.length > 0 ? "borderGlow 4s infinite ease" : undefined,
     }}>
       {/* Header */}
       <div style={{
@@ -33,6 +34,7 @@ export function DialogueBox() {
         letterSpacing: "2px",
         marginBottom: "6px",
         fontSize: "7px",
+        animation: "pulse 3s infinite ease",
       }}>
         BATTLE LOG
       </div>
@@ -52,26 +54,33 @@ export function DialogueBox() {
             color: COLORS.textDim,
             fontStyle: "italic",
             fontSize: "7px",
+            animation: "float 3s infinite ease",
           }}>
             Awaiting battle...
           </div>
         )}
         {visibleLog.map((entry, i) => {
           const isLatest = i === visibleLog.length - 1;
+          const isRecent = i >= visibleLog.length - 3;
           const age = visibleLog.length - i;
           const opacity = age <= 1 ? 1 : age <= 3 ? 0.8 : age <= 6 ? 0.6 : 0.4;
+
+          const textColor = entry.text.includes("CRITICAL") ? COLORS.critYellow :
+                 entry.text.includes("counterattack") || entry.text.includes("strikes back") ? COLORS.fire :
+                 entry.text.includes("ally") || entry.text.includes("Summoned") ? COLORS.poison :
+                 entry.text.includes("defeated") || entry.text.includes("Victory") ? COLORS.healGreen :
+                 entry.text.includes("fallen") ? COLORS.hpRed :
+                 entry.text.includes("Scout") || entry.text.includes("Tester") || entry.text.includes("Smith") ? COLORS.ice :
+                 COLORS.parchment;
+
           return (
             <div key={entry.id} style={{
               ...PIXEL_FONT_SM,
               fontSize: "8px",
-              color: entry.text.includes("CRITICAL") ? COLORS.critYellow :
-                     entry.text.includes("counterattack") || entry.text.includes("strikes back") ? COLORS.fire :
-                     entry.text.includes("summoned") ? COLORS.poison :
-                     entry.text.includes("defeated") ? COLORS.healGreen :
-                     entry.text.includes("fallen") ? COLORS.hpRed :
-                     COLORS.parchment,
+              color: textColor,
               opacity,
-              animation: isLatest ? "slideUp 0.2s ease" : undefined,
+              animation: isRecent ? "slideInLeft 0.3s ease" : undefined,
+              transition: "opacity 0.5s ease",
             }}>
               {">"} {entry.text}
             </div>

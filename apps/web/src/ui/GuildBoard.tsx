@@ -9,6 +9,10 @@ const EXAMPLE_QUESTS = [
   { emoji: "\uD83D\uDCCB", label: "Todo CLI", prompt: "Build a Node.js CLI todo app \u2014 add, list, done, remove commands. Store tasks in todos.json. No dependencies.", cwd: "examples/todo-cli" },
   { emoji: "\uD83D\uDCF0", label: "AI Report", prompt: "Research the state of AI in 2025 and write a ~500 word report covering breakthroughs, open vs closed source, agents, and regulation. Save to report.md", cwd: "examples/research-report" },
   { emoji: "\uD83C\uDF24\uFE0F", label: "Weather App", prompt: "Build a responsive weather dashboard showing current weather for Tokyo, New York, and London with card layout and emoji icons", cwd: "examples/weather-dashboard" },
+  { emoji: "\uD83C\uDFB2", label: "RPG Battle", prompt: "Build a turn-based RPG battle system in HTML/JS/CSS: party of 3 heroes vs 2 monsters, each with HP/ATK/DEF stats, attack/heal/defend commands, animated HP bars, battle log, victory/defeat screens. Multiple files: index.html, styles.css, battle.js, data.js", cwd: "examples/rpg-battle" },
+  { emoji: "\uD83D\uDCC8", label: "Dashboard", prompt: "Build a full analytics dashboard with HTML/CSS/JS: 4 metric cards (users, revenue, orders, conversion), a line chart drawn on Canvas, a sortable data table with 10 rows, and a dark theme. Separate files for HTML, CSS, and JS. Make it responsive.", cwd: "examples/analytics-dashboard" },
+  { emoji: "\uD83C\uDFAE", label: "Tetris", prompt: "Build a complete Tetris game: all 7 tetromino shapes, rotation, wall kicks, line clearing with animation, score/level system, increasing speed, ghost piece, next piece preview, game over detection. Use HTML Canvas.", cwd: "examples/tetris" },
+  { emoji: "\uD83D\uDE80", label: "Space Shooter", prompt: "Build a space shooter game with HTML Canvas: player ship with WASD+arrow controls, shooting with spacebar, waves of enemies that move in patterns, explosions, score counter, 3 lives, boss enemy every 5 waves. Multiple files.", cwd: "examples/space-shooter" },
 ];
 
 export function GuildBoard() {
@@ -56,9 +60,9 @@ export function GuildBoard() {
             ...PIXEL_FONT,
             fontSize: "16px",
             color: COLORS.gold,
-            textShadow: `0 0 10px ${COLORS.gold}44, 2px 2px 0 #000`,
             letterSpacing: "4px",
             marginBottom: "4px",
+            animation: "shimmer 3s infinite ease, float 4s infinite ease",
           }}>
             QUEST BOARD
           </div>
@@ -83,7 +87,7 @@ export function GuildBoard() {
             POSTED QUESTS
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-            {EXAMPLE_QUESTS.map((q) => {
+            {EXAMPLE_QUESTS.map((q, i) => {
               const selected = prompt === q.prompt;
               return (
                 <button
@@ -98,10 +102,10 @@ export function GuildBoard() {
                     ...PIXEL_FONT_SM,
                     fontSize: "7px",
                     transition: "all 0.15s",
-                    animation: selected ? "pulseGlow 2s infinite" : undefined,
+                    animation: selected ? "pulseGlow 2s infinite" : `bounceIn 0.4s ease ${i * 0.05}s both`,
                   }}
                 >
-                  {q.emoji} {q.label}
+                  <span style={{ animation: `sway ${3 + i * 0.3}s infinite ease` }}>{q.emoji}</span> {q.label}
                 </button>
               );
             })}
