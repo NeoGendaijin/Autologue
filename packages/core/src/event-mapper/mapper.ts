@@ -79,6 +79,17 @@ export class EventMapper {
     const events: GameEvent[] = [];
 
     if (event.role === "model") {
+      // Skip partial/streaming delta messages — they're just fragments.
+      // Only process complete messages to avoid flooding the game with events.
+      if (event.isPartial) {
+        return events;
+      }
+
+      // Skip very short messages (likely turn-complete markers or fragments)
+      if (event.content.trim().length < 5) {
+        return events;
+      }
+
       // Check for question patterns (expert mode uses broader patterns)
       const questionPatterns = this.mode === "expert" ? QUESTION_PATTERNS_EXPERT : QUESTION_PATTERNS;
       if (matchesAny(event.content, questionPatterns)) {

@@ -87,9 +87,9 @@ export function createInitialState(): GameState {
 }
 
 const ESTIMATED_CHARS_PER_TOKEN = 4;
-const PROMPT_DAMAGE_FREE_TOKENS = 180;
-const PROMPT_TOKENS_PER_HP = 180;
-const CONTEXT_TOKENS_PER_HP = 3000;
+const PROMPT_DAMAGE_FREE_TOKENS = 500;
+const PROMPT_TOKENS_PER_HP = 500;
+const CONTEXT_TOKENS_PER_HP = 8000;
 
 interface ContextLoadOptions {
   contextDelta: number;
@@ -155,7 +155,7 @@ export function reduceGameEvent(
         state,
         now,
         {
-          contextDelta: 5000 + Math.floor(Math.random() * 10000),
+          contextDelta: 1500 + Math.floor(Math.random() * 2500),
           source: "file read load",
           logText: `Reading ${event.path}`,
           logType: "action",
@@ -169,7 +169,7 @@ export function reduceGameEvent(
         state,
         now,
         {
-          contextDelta: 3000 + Math.floor(Math.random() * 5000),
+          contextDelta: 1000 + Math.floor(Math.random() * 2000),
           source: "file write load",
           logText: `Writing ${event.path}`,
           logType: "action",
@@ -183,7 +183,7 @@ export function reduceGameEvent(
         state,
         now,
         {
-          contextDelta: 8000 + Math.floor(Math.random() * 15000),
+          contextDelta: 2000 + Math.floor(Math.random() * 3000),
           source: "code generation load",
           logText: `Generating code for ${event.target}`,
           logType: "action",
@@ -197,7 +197,7 @@ export function reduceGameEvent(
         state,
         now,
         {
-          contextDelta: 5000,
+          contextDelta: 1500,
           source: "test execution load",
           logText: `Running tests: ${event.testTarget}`,
           logType: "action",
@@ -223,7 +223,7 @@ export function reduceGameEvent(
         },
         now,
         {
-          contextDelta: 10000,
+          contextDelta: 3000,
           source: "test failure load",
           logText: `${event.count} test(s) failed: ${event.errors[0] ?? "unknown error"}`,
           logType: "error",
@@ -284,7 +284,7 @@ export function reduceGameEvent(
       };
       const pressured = applyContextPressure(
         nextState,
-        state.contextUsed + 5000,
+        state.contextUsed + 1500,
         now,
         "error backlash"
       );
@@ -305,7 +305,7 @@ export function reduceGameEvent(
         state,
         now,
         {
-          contextDelta: 2000,
+          contextDelta: 500,
           source: "reasoning load",
           logText: `Thinking: ${snippet}`,
           logType: "action",
@@ -319,7 +319,7 @@ export function reduceGameEvent(
         state,
         now,
         {
-          contextDelta: 3000,
+          contextDelta: 800,
           source: "tool load",
           logText: `Using tool: ${event.tool}`,
           logType: "action",
