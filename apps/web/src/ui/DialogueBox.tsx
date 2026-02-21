@@ -19,7 +19,7 @@ export function DialogueBox() {
       background: COLORS.bgDark,
       border: `2px solid ${COLORS.panelBorder}`,
       borderTop: `3px solid ${COLORS.borderLight}`,
-      padding: "8px 12px",
+      padding: "10px 14px",
       position: "relative",
       flex: 1,
       minHeight: 0,
@@ -33,7 +33,6 @@ export function DialogueBox() {
         color: COLORS.textDim,
         letterSpacing: "2px",
         marginBottom: "6px",
-        fontSize: "7px",
         animation: "pulse 3s infinite ease",
       }}>
         BATTLE LOG
@@ -45,7 +44,7 @@ export function DialogueBox() {
         overflow: "auto",
         display: "flex",
         flexDirection: "column",
-        gap: "3px",
+        gap: "4px",
         minHeight: 0,
       }}>
         {visibleLog.length === 0 && (
@@ -53,14 +52,12 @@ export function DialogueBox() {
             ...PIXEL_FONT_SM,
             color: COLORS.textDim,
             fontStyle: "italic",
-            fontSize: "7px",
             animation: "float 3s infinite ease",
           }}>
             Awaiting battle...
           </div>
         )}
         {visibleLog.map((entry, i) => {
-          const isLatest = i === visibleLog.length - 1;
           const isRecent = i >= visibleLog.length - 3;
           const age = visibleLog.length - i;
           const opacity = age <= 1 ? 1 : age <= 3 ? 0.8 : age <= 6 ? 0.6 : 0.4;
@@ -76,7 +73,6 @@ export function DialogueBox() {
           return (
             <div key={entry.id} style={{
               ...PIXEL_FONT_SM,
-              fontSize: "8px",
               color: textColor,
               opacity,
               animation: isRecent ? "slideInLeft 0.3s ease" : undefined,
@@ -86,13 +82,11 @@ export function DialogueBox() {
             </div>
           );
         })}
-        {/* Blinking cursor */}
         {visibleLog.length > 0 && (
           <span style={{
             ...PIXEL_FONT_SM,
             color: COLORS.parchment,
             animation: "blink 1s infinite",
-            fontSize: "8px",
           }}>
             _
           </span>

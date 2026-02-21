@@ -58,7 +58,7 @@ export function App() {
 
           {/* Bottom section: Dialogue + Commands — compact */}
           <div style={{
-            height: "120px",
+            height: "150px",
             flexShrink: 0,
             display: "flex",
             minHeight: 0,
@@ -74,7 +74,7 @@ export function App() {
 
         {/* Right sidebar: Party */}
         <div style={{
-          width: "160px",
+          width: "200px",
           display: "flex",
           flexDirection: "column",
           borderLeft: `2px solid ${COLORS.panelBorder}`,

@@ -1,7 +1,9 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { useBattleStore } from "../store/battleStore";
-import { COLORS, PIXEL_FONT_SM, PIXEL_FONT, HERO_PIXELS, AGENT_PIXEL_SPRITES, AGENT_SPRITES } from "../theme";
+import { COLORS, PIXEL_FONT_SM, PIXEL_FONT, PIXEL_FONT_MD, AGENT_PIXELS, AGENT_PIXEL_SPRITES, AGENT_SPRITES } from "../theme";
+
+type BackgroundTheme = "day" | "night";
 
 // --- Generic pixel sprite renderer via CSS box-shadow ---
 function PixelSprite({ pixels, scale = 3, animation }: {
@@ -42,19 +44,19 @@ function PixelSprite({ pixels, scale = 3, animation }: {
 }
 
 // --- Main Agent (pixel character) ---
-function MainAgent({ scale = 7, attacking, hit }: { scale?: number; attacking?: boolean; hit?: boolean }) {
+function MainAgent({ scale = 9, attacking, hit }: { scale?: number; attacking?: boolean; hit?: boolean }) {
   const anim = attacking ? "slash 0.5s ease" :
-               hit ? "heroHit 0.5s ease" :
+               hit ? "agentHit 0.5s ease" :
                "idle 2s infinite ease";
 
   return (
     <div style={{
       filter: attacking
-        ? "drop-shadow(0 0 16px #ffcc00) drop-shadow(0 0 30px #ffcc0066)"
-        : "drop-shadow(0 0 6px #ffcc0044)",
+        ? "drop-shadow(0 0 20px #ffcc00) drop-shadow(0 0 40px #ffcc0066)"
+        : "drop-shadow(0 0 8px #ffcc0044)",
       transition: "filter 0.3s",
     }}>
-      <PixelSprite pixels={HERO_PIXELS} scale={scale} animation={anim} />
+      <PixelSprite pixels={AGENT_PIXELS} scale={scale} animation={anim} />
     </div>
   );
 }
@@ -73,7 +75,7 @@ function PartyMemberSprite({ agentType, index }: { agentType: string; index: num
         animation: "summon 0.6s ease",
       }}>
         <div style={{
-          fontSize: "48px",
+          fontSize: "64px",
           animation: "wobble 3s infinite ease",
           filter: "drop-shadow(0 0 8px #aa44ff66)",
         }}>
@@ -81,7 +83,6 @@ function PartyMemberSprite({ agentType, index }: { agentType: string; index: num
         </div>
         <div style={{
           ...PIXEL_FONT_SM,
-          fontSize: "8px",
           color: COLORS.ice,
           marginTop: "4px",
           textShadow: "1px 1px 0 #000",
@@ -100,19 +101,18 @@ function PartyMemberSprite({ agentType, index }: { agentType: string; index: num
       animation: "summon 0.6s ease",
     }}>
       <div style={{
-        filter: "drop-shadow(0 0 6px #aa44ff66)",
+        filter: "drop-shadow(0 0 8px #aa44ff66)",
       }}>
         <PixelSprite
           pixels={pixels}
-          scale={5}
+          scale={7}
           animation={`idle ${2.2 + index * 0.3}s infinite ease`}
         />
       </div>
       <div style={{
         ...PIXEL_FONT_SM,
-        fontSize: "7px",
         color: COLORS.ice,
-        marginTop: "3px",
+        marginTop: "4px",
         textShadow: "1px 1px 0 #000",
         animation: "pulse 3s infinite ease",
       }}>
@@ -135,14 +135,13 @@ function DefeatedMarker({ emoji, index }: { emoji: string; index: number }) {
       animationDelay: `${index * 0.05}s`,
     }}>
       <div style={{
-        fontSize: "32px",
+        fontSize: "48px",
         transform: "rotate(15deg)",
         animation: "sway 4s infinite ease-in-out",
         animationDelay: `${index * 0.3}s`,
       }}>{emoji}</div>
       <div style={{
         ...PIXEL_FONT_SM,
-        fontSize: "8px",
         color: COLORS.healGreen,
         marginTop: "3px",
       }}>
@@ -153,21 +152,25 @@ function DefeatedMarker({ emoji, index }: { emoji: string; index: number }) {
 }
 
 // --- Active enemy being fought ---
-function ActiveEnemy({ emoji, name, color, isHit }: {
-  emoji: string; name: string; color: string; isHit: boolean;
+function ActiveEnemy({ emoji, name, color, isHit, isTaunting }: {
+  emoji: string; name: string; color: string; isHit: boolean; isTaunting?: boolean;
 }) {
   return (
     <div style={{
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-      animation: isHit ? "enemyHit 0.5s ease" : "enemyIdle 2.5s infinite ease",
+      animation: isHit ? "enemyHit 0.5s ease" :
+                 isTaunting ? "taunt 2s infinite ease" :
+                 "enemyIdle 2.5s infinite ease",
     }}>
       <div style={{
-        fontSize: "72px",
+        fontSize: "100px",
         filter: isHit
-          ? "brightness(2) drop-shadow(0 0 20px #ff4444)"
-          : "drop-shadow(0 0 10px #00000088) drop-shadow(0 0 20px #ff444422)",
+          ? "brightness(2) drop-shadow(0 0 24px #ff4444)"
+          : isTaunting
+            ? "drop-shadow(0 0 16px #ff444488) drop-shadow(0 0 30px #ff440044)"
+            : "drop-shadow(0 0 12px #00000088) drop-shadow(0 0 24px #ff444422)",
         transition: "filter 0.1s",
         animation: isHit ? undefined : "wobble 3s infinite ease-in-out",
       }}>
@@ -175,14 +178,124 @@ function ActiveEnemy({ emoji, name, color, isHit }: {
       </div>
       <div style={{
         ...PIXEL_FONT_SM,
-        fontSize: "10px",
+        fontSize: "14px",
         color,
-        marginTop: "6px",
+        marginTop: "8px",
         textShadow: `1px 1px 0 #000, 0 0 8px ${color}44`,
         whiteSpace: "nowrap",
         animation: "pulse 2s infinite ease",
       }}>
         {name}
+      </div>
+    </div>
+  );
+}
+
+// --- Enemy Speech Bubble (question taunt) ---
+function EnemySpeechBubble({ text, choices, onChoice }: {
+  text: string;
+  choices: Array<{ label: string; risk: string }>;
+  onChoice: (idx: number, label: string) => void;
+}) {
+  const [hoveredIdx, setHoveredIdx] = useState(-1);
+
+  const TAUNTS = [
+    "Heh heh heh...",
+    "Fufufu...",
+    "You fool...",
+    "Choose wisely...",
+    "Dare you decide?",
+  ];
+  const taunt = TAUNTS[Math.floor(Math.random() * TAUNTS.length)];
+
+  return (
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: "12px",
+      animation: "speechBubble 0.5s ease",
+    }}>
+      {/* Speech bubble */}
+      <div style={{
+        position: "relative",
+        background: `${COLORS.bgDark}ee`,
+        border: `3px solid ${COLORS.fire}`,
+        borderRadius: "8px",
+        padding: "14px 18px",
+        maxWidth: "360px",
+        boxShadow: `0 0 20px ${COLORS.fire}44, inset 0 0 10px ${COLORS.fire}11`,
+      }}>
+        {/* Taunt */}
+        <div style={{
+          ...PIXEL_FONT_SM,
+          fontSize: "12px",
+          color: COLORS.fire,
+          marginBottom: "8px",
+          animation: "pulse 1.5s infinite ease",
+        }}>
+          {taunt}
+        </div>
+        {/* Question text */}
+        <div style={{
+          ...PIXEL_FONT_SM,
+          fontSize: "13px",
+          color: COLORS.parchment,
+          lineHeight: "20px",
+        }}>
+          {text}
+        </div>
+        {/* Bubble arrow pointing down */}
+        <div style={{
+          position: "absolute",
+          bottom: "-12px",
+          right: "30px",
+          width: 0,
+          height: 0,
+          borderLeft: "12px solid transparent",
+          borderRight: "12px solid transparent",
+          borderTop: `12px solid ${COLORS.fire}`,
+        }} />
+      </div>
+
+      {/* Choice buttons */}
+      <div style={{
+        display: "flex",
+        gap: "10px",
+        flexWrap: "wrap",
+        justifyContent: "center",
+      }}>
+        {choices.map((choice, i) => (
+          <button
+            key={i}
+            onClick={() => onChoice(i, choice.label)}
+            onMouseEnter={() => setHoveredIdx(i)}
+            onMouseLeave={() => setHoveredIdx(-1)}
+            style={{
+              background: hoveredIdx === i ? `${COLORS.gold}33` : `${COLORS.bgDark}dd`,
+              border: `2px solid ${hoveredIdx === i ? COLORS.gold : COLORS.borderLight}`,
+              color: hoveredIdx === i ? COLORS.gold : COLORS.parchment,
+              padding: "12px 22px",
+              cursor: "pointer",
+              ...PIXEL_FONT_SM,
+              fontSize: "13px",
+              animation: `choiceSlideUp 0.4s ease`,
+              animationDelay: `${0.3 + i * 0.12}s`,
+              animationFillMode: "both",
+              transition: "all 0.15s",
+              boxShadow: hoveredIdx === i ? `0 0 16px ${COLORS.gold}44` : "none",
+            }}
+          >
+            <span style={{
+              color: COLORS.selectCursor,
+              marginRight: "8px",
+              animation: hoveredIdx === i ? "wobble 0.5s infinite" : undefined,
+            }}>
+              {hoveredIdx === i ? "\u25B6" : "\u25B7"}
+            </span>
+            {choice.label}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -213,11 +326,13 @@ function Star({ index }: { index: number }) {
 export function BattleArena() {
   const phase = useGameStore((s) => s.state.phase);
   const agents = useGameStore((s) => s.state.agents);
+  const pendingQuestion = useGameStore((s) => s.state.pendingQuestion);
+  const makeChoice = useGameStore((s) => s.makeChoice);
   const encounters = useBattleStore((s) => s.encounters);
   const damageNumbers = useBattleStore((s) => s.damageNumbers);
   const screenShake = useBattleStore((s) => s.screenShake);
-  const heroAttacking = useBattleStore((s) => s.heroAttacking);
-  const heroHit = useBattleStore((s) => s.heroHit);
+  const agentAttacking = useBattleStore((s) => s.agentAttacking);
+  const agentHit = useBattleStore((s) => s.agentHit);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const subAgents = agents.filter((a) => a.id !== "main");
@@ -230,14 +345,30 @@ export function BattleArena() {
   }, [encounters.length]);
 
   const isActive = phase === "running" || phase === "question";
+  const isQuestion = phase === "question" && pendingQuestion;
   const defeated = encounters.filter((e) => e.status === "defeated");
   const active = encounters.find((e) => e.status === "active");
+  const [bgTheme, setBgTheme] = useState<BackgroundTheme>(() =>
+    Math.random() < 0.5 ? "day" : "night"
+  );
+
+  // Re-roll day/night at each quest start so each run feels different.
+  useEffect(() => {
+    if (phase === "running") {
+      setBgTheme(Math.random() < 0.5 ? "day" : "night");
+    }
+  }, [phase]);
+
+  const bgImageUrl =
+    bgTheme === "day"
+      ? "http://localhost:3001/asset/BackGround-day.png"
+      : "http://localhost:3001/asset/BackGround-night.png";
 
   return (
     <div style={{
       width: "100%",
       flex: 1,
-      minHeight: "200px",
+      minHeight: "240px",
       position: "relative",
       overflow: "hidden",
       background: `linear-gradient(180deg, #0c0c24 0%, #1a1a3e 35%, #2a1a0e 75%, #1a1208 100%)`,
@@ -257,7 +388,7 @@ export function BattleArena() {
         bottom: 0,
         left: 0,
         right: 0,
-        height: "80px",
+        height: "90px",
         background: "linear-gradient(180deg, #2a1a0e 0%, #1a1208 100%)",
         borderTop: `2px solid #3a2a1e`,
       }}>
@@ -287,7 +418,7 @@ export function BattleArena() {
       {/* === Main battle scene — centered === */}
       <div ref={scrollRef} style={{
         position: "absolute",
-        bottom: "80px",
+        bottom: "90px",
         left: 0,
         right: 0,
         top: 0,
@@ -296,7 +427,7 @@ export function BattleArena() {
         justifyContent: "center",
         overflowX: "hidden",
         padding: "0 40px",
-        gap: "24px",
+        gap: "30px",
       }}>
 
         {/* Defeated markers */}
@@ -304,7 +435,7 @@ export function BattleArena() {
           <div style={{
             flexShrink: 0,
             display: "flex",
-            gap: "12px",
+            gap: "14px",
             alignItems: "center",
           }}>
             {defeated.map((enc, i) => (
@@ -318,7 +449,7 @@ export function BattleArena() {
           flexShrink: 0,
           display: "flex",
           alignItems: "flex-end",
-          gap: "16px",
+          gap: "18px",
         }}>
           {/* Sub-agents on the left, walking alongside */}
           {subAgents.map((agent, i) => (
@@ -331,10 +462,10 @@ export function BattleArena() {
             flexDirection: "column",
             alignItems: "center",
           }}>
-            <MainAgent scale={7} attacking={heroAttacking} hit={heroHit} />
+            <MainAgent scale={9} attacking={agentAttacking} hit={agentHit} />
             <div style={{
               ...PIXEL_FONT,
-              fontSize: "10px",
+              fontSize: "14px",
               color: COLORS.gold,
               marginTop: "8px",
               animation: "shimmer 3s infinite ease",
@@ -345,17 +476,17 @@ export function BattleArena() {
         </div>
 
         {/* VS */}
-        {active && (
+        {active && !isQuestion && (
           <div style={{
             flexShrink: 0,
-            width: "60px",
+            width: "70px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}>
             <div style={{
               ...PIXEL_FONT,
-              fontSize: "14px",
+              fontSize: "22px",
               color: COLORS.fire,
               animation: "pulse 1.5s infinite ease",
               textShadow: `0 0 10px ${COLORS.fire}66, 2px 2px 0 #000`,
@@ -369,44 +500,68 @@ export function BattleArena() {
         {active && (
           <div style={{
             flexShrink: 0,
-            position: "relative",
-            animation: "bounceIn 0.4s ease",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            animation: isQuestion ? undefined : "bounceIn 0.4s ease",
           }}>
             <ActiveEnemy
               emoji={active.emoji}
               name={active.name}
               color={active.color}
-              isHit={heroAttacking}
+              isHit={agentAttacking}
+              isTaunting={!!isQuestion}
             />
-            <div style={{
-              ...PIXEL_FONT_SM,
-              fontSize: "8px",
-              color: COLORS.textDim,
-              textAlign: "center",
-              marginTop: "4px",
-              maxWidth: "120px",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              animation: "slideInLeft 0.3s ease",
-            }}>
-              {active.description.replace(/^(Writing|Reading|Using tool:\s*\w+|Running tests:?|Generating code for)\s*/i, "").slice(0, 25)}
-            </div>
+            {!isQuestion && (
+              <div style={{
+                ...PIXEL_FONT_SM,
+                color: COLORS.textDim,
+                textAlign: "center",
+                marginTop: "6px",
+                maxWidth: "160px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                animation: "slideInLeft 0.3s ease",
+              }}>
+                {active.description.replace(/^(Writing|Reading|Using tool:\s*\w+|Running tests:?|Generating code for)\s*/i, "").slice(0, 25)}
+              </div>
+            )}
           </div>
         )}
 
         {/* Waiting */}
-        {isActive && !active && (
+        {isActive && !active && !isQuestion && (
           <div style={{
             flexShrink: 0,
             opacity: 0.2,
-            fontSize: "36px",
+            fontSize: "52px",
             animation: "float 2s infinite ease",
           }}>
             {"..."}
           </div>
         )}
       </div>
+
+      {/* === Enemy Question Overlay === */}
+      {isQuestion && pendingQuestion && (
+        <div style={{
+          position: "absolute",
+          top: "8px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 20,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}>
+          <EnemySpeechBubble
+            text={pendingQuestion.text}
+            choices={pendingQuestion.choices}
+            onChoice={(idx, label) => makeChoice(idx, label)}
+          />
+        </div>
+      )}
 
       {/* === Damage numbers === */}
       {damageNumbers.map((dmg) => (
@@ -415,7 +570,7 @@ export function BattleArena() {
           right: "32%",
           top: "30%",
           ...PIXEL_FONT,
-          fontSize: dmg.isCrit ? "28px" : "18px",
+          fontSize: dmg.isCrit ? "36px" : "26px",
           color: dmg.color,
           textShadow: `0 0 10px ${dmg.color}, 3px 3px 0 #000`,
           animation: `${dmg.isCrit ? "critFloat" : "damageFloat"} 1s forwards ease-out`,
@@ -430,10 +585,10 @@ export function BattleArena() {
       {encounters.length > 0 && (
         <div style={{
           position: "absolute",
-          top: "10px",
-          right: "16px",
+          top: "12px",
+          right: "18px",
           ...PIXEL_FONT_SM,
-          fontSize: "9px",
+          fontSize: "11px",
           color: COLORS.textDim,
           animation: "pulse 3s infinite ease",
         }}>
@@ -445,10 +600,10 @@ export function BattleArena() {
       {subAgents.length > 0 && (
         <div style={{
           position: "absolute",
-          top: "10px",
-          left: "16px",
+          top: "12px",
+          left: "18px",
           ...PIXEL_FONT_SM,
-          fontSize: "9px",
+          fontSize: "11px",
           color: COLORS.poison,
           animation: "pulse 3s infinite ease",
         }}>
@@ -464,7 +619,7 @@ export function BattleArena() {
           left: "50%",
           transform: "translate(-50%, -50%)",
           ...PIXEL_FONT,
-          fontSize: "14px",
+          fontSize: "22px",
           color: COLORS.textDim,
           textShadow: "2px 2px 0 #000",
           letterSpacing: "4px",

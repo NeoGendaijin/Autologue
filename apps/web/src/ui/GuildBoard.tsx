@@ -9,17 +9,44 @@ interface ExampleQuest {
   cwd: string;
 }
 
+// Module-level cache so examples survive unmount/remount
+let cachedQuests: ExampleQuest[] | null = null;
+let fetchInFlight = false;
+
 export function GuildBoard() {
+  const continueCwd = useGameStore((s) => s.continueCwd);
+  const clearContinueCwd = useGameStore((s) => s.clearContinueCwd);
+
   const [prompt, setPrompt] = useState("");
   const [cwd, setCwd] = useState("");
-  const [exampleQuests, setExampleQuests] = useState<ExampleQuest[]>([]);
+  const [exampleQuests, setExampleQuests] = useState<ExampleQuest[]>(cachedQuests || []);
 
+  // Fetch examples (with cache)
   useEffect(() => {
+    if (cachedQuests) {
+      setExampleQuests(cachedQuests);
+      return;
+    }
+    if (fetchInFlight) return;
+    fetchInFlight = true;
     fetch("http://localhost:3001/api/examples")
       .then((r) => r.json())
-      .then((data) => setExampleQuests(data))
-      .catch(() => {});
+      .then((data) => {
+        cachedQuests = data;
+        setExampleQuests(data);
+      })
+      .catch(() => {})
+      .finally(() => { fetchInFlight = false; });
   }, []);
+
+  // Pick up continue cwd from previous quest
+  useEffect(() => {
+    if (continueCwd) {
+      setCwd(continueCwd);
+      clearContinueCwd();
+    }
+  }, [continueCwd, clearContinueCwd]);
+
   const startQuest = useGameStore((s) => s.startQuest);
   const setMode = useGameStore((s) => s.setMode);
   const mode = useGameStore((s) => s.state.mode);
@@ -37,6 +64,8 @@ export function GuildBoard() {
     }
   };
 
+  const isContinuing = !!cwd && !prompt;
+
   return (
     <div style={{
       position: "absolute",
@@ -48,7 +77,7 @@ export function GuildBoard() {
       zIndex: 100,
     }}>
       <div style={{
-        width: "520px",
+        width: "600px",
         maxWidth: "92vw",
         background: COLORS.bgPanel,
         border: `3px solid ${COLORS.borderLight}`,
@@ -60,7 +89,7 @@ export function GuildBoard() {
         <div style={{ textAlign: "center", marginBottom: "16px" }}>
           <div style={{
             ...PIXEL_FONT,
-            fontSize: "16px",
+            fontSize: "20px",
             color: COLORS.gold,
             letterSpacing: "4px",
             marginBottom: "4px",
@@ -71,11 +100,36 @@ export function GuildBoard() {
           <div style={{
             ...PIXEL_FONT_SM,
             color: COLORS.textDim,
-            fontSize: "7px",
           }}>
             Choose a quest or write your own
           </div>
         </div>
+
+        {/* Continue banner */}
+        {isContinuing && (
+          <div style={{
+            marginBottom: "12px",
+            padding: "8px 12px",
+            background: `${COLORS.healGreen}11`,
+            border: `2px solid ${COLORS.healGreen}44`,
+            textAlign: "center",
+            animation: "bounceIn 0.4s ease",
+          }}>
+            <div style={{
+              ...PIXEL_FONT_SM,
+              color: COLORS.healGreen,
+              marginBottom: "4px",
+            }}>
+              CONTINUING PROJECT
+            </div>
+            <div style={{
+              ...PIXEL_FONT_SM,
+              color: COLORS.textMid,
+            }}>
+              {cwd}
+            </div>
+          </div>
+        )}
 
         {/* Example quests */}
         <div style={{ marginBottom: "12px" }}>
@@ -84,7 +138,6 @@ export function GuildBoard() {
             color: COLORS.textDim,
             letterSpacing: "2px",
             marginBottom: "6px",
-            fontSize: "7px",
           }}>
             POSTED QUESTS
           </div>
@@ -99,10 +152,9 @@ export function GuildBoard() {
                     background: selected ? `${COLORS.gold}22` : COLORS.bgDark,
                     border: `1px solid ${selected ? COLORS.gold : COLORS.panelBorder}`,
                     color: selected ? COLORS.gold : COLORS.textMid,
-                    padding: "4px 8px",
+                    padding: "6px 10px",
                     cursor: "pointer",
                     ...PIXEL_FONT_SM,
-                    fontSize: "7px",
                     transition: "all 0.15s",
                     animation: selected ? "pulseGlow 2s infinite" : `bounceIn 0.4s ease ${i * 0.05}s both`,
                   }}
@@ -122,7 +174,6 @@ export function GuildBoard() {
             display: "block",
             marginBottom: "4px",
             letterSpacing: "2px",
-            fontSize: "7px",
           }}>
             QUEST DETAILS
           </label>
@@ -130,19 +181,17 @@ export function GuildBoard() {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Describe the quest..."
+            placeholder={isContinuing ? "What should the agent do next?" : "Describe the quest..."}
             rows={3}
             style={{
               width: "100%",
               background: COLORS.bgDark,
-              border: `2px solid ${COLORS.panelBorder}`,
+              border: `2px solid ${isContinuing ? `${COLORS.healGreen}44` : COLORS.panelBorder}`,
               color: COLORS.parchment,
-              padding: "8px",
+              padding: "10px",
               resize: "vertical",
               outline: "none",
               ...PIXEL_FONT_SM,
-              fontSize: "8px",
-              lineHeight: "14px",
             }}
           />
         </div>
@@ -155,7 +204,6 @@ export function GuildBoard() {
             display: "block",
             marginBottom: "4px",
             letterSpacing: "2px",
-            fontSize: "7px",
           }}>
             WORKING DIR (OPTIONAL)
           </label>
@@ -168,10 +216,9 @@ export function GuildBoard() {
               background: COLORS.bgDark,
               border: `2px solid ${COLORS.panelBorder}`,
               color: COLORS.parchment,
-              padding: "6px 8px",
+              padding: "8px 10px",
               outline: "none",
               ...PIXEL_FONT_SM,
-              fontSize: "8px",
             }}
           />
         </div>
@@ -184,10 +231,9 @@ export function GuildBoard() {
               background: COLORS.bgDark,
               border: `2px solid ${COLORS.poison}44`,
               color: COLORS.poison,
-              padding: "6px 14px",
+              padding: "8px 16px",
               cursor: "pointer",
               ...PIXEL_FONT_SM,
-              fontSize: "8px",
             }}
           >
             {mode === "expert" ? "\uD83E\uDDE0 EXPERT" : "\uD83C\uDFB2 ADVENTURE"}
@@ -199,12 +245,12 @@ export function GuildBoard() {
               background: prompt.trim() && connected ? `${COLORS.gold}22` : COLORS.bgDark,
               border: `2px solid ${prompt.trim() && connected ? COLORS.gold : COLORS.panelBorder}`,
               color: prompt.trim() && connected ? COLORS.gold : COLORS.textDim,
-              padding: "6px 20px",
+              padding: "8px 22px",
               cursor: !prompt.trim() || !connected ? "not-allowed" : "pointer",
               opacity: !prompt.trim() || !connected ? 0.5 : 1,
               animation: prompt.trim() && connected ? "pulseGlow 2s infinite" : undefined,
               ...PIXEL_FONT,
-              fontSize: "10px",
+              fontSize: "13px",
               letterSpacing: "2px",
             }}
           >
@@ -218,7 +264,6 @@ export function GuildBoard() {
             marginTop: "8px",
             ...PIXEL_FONT_SM,
             color: COLORS.textDim,
-            fontSize: "7px",
           }}>
             Connecting to guild server...
           </div>

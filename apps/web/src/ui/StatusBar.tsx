@@ -1,21 +1,21 @@
 import { useState, useEffect } from "react";
 import { useGameStore } from "../store/gameStore";
-import { COLORS, PIXEL_FONT, PIXEL_FONT_SM } from "../theme";
+import { COLORS, PIXEL_FONT, PIXEL_FONT_SM, PIXEL_FONT_MD } from "../theme";
 
 function PixelBar({ current, max, color, darkColor, label, danger }: {
   current: number; max: number; color: string; darkColor: string; label: string; danger?: boolean;
 }) {
   const pct = Math.max(0, Math.min(100, (current / max) * 100));
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-      <span style={{ ...PIXEL_FONT_SM, color, minWidth: "24px" }}>{label}</span>
+    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <span style={{ ...PIXEL_FONT_SM, color, minWidth: "28px" }}>{label}</span>
       <div style={{
         flex: 1,
-        height: "10px",
+        height: "14px",
         background: darkColor,
         border: `1px solid ${COLORS.borderLight}`,
         position: "relative",
-        minWidth: "80px",
+        minWidth: "120px",
       }}>
         <div style={{
           width: `${pct}%`,
@@ -25,7 +25,7 @@ function PixelBar({ current, max, color, darkColor, label, danger }: {
           animation: danger ? "dangerPulse 1s infinite" : undefined,
         }} />
       </div>
-      <span style={{ ...PIXEL_FONT_SM, color: COLORS.textDim, minWidth: "50px", textAlign: "right", fontSize: "7px" }}>
+      <span style={{ ...PIXEL_FONT_SM, color: COLORS.textDim, minWidth: "70px", textAlign: "right" }}>
         {current}/{max}
       </span>
     </div>
@@ -58,31 +58,31 @@ export function StatusBar() {
   const mpPct = (state.mp / state.mpMax) * 100;
   const isActive = state.phase === "running" || state.phase === "question";
   const questName = state.currentQuest?.description
-    ? state.currentQuest.description.slice(0, 40) + (state.currentQuest.description.length > 40 ? "..." : "")
+    ? state.currentQuest.description.slice(0, 50) + (state.currentQuest.description.length > 50 ? "..." : "")
     : "No active quest";
 
   return (
     <div style={{
       background: COLORS.bgDark,
       borderBottom: `2px solid ${COLORS.panelBorder}`,
-      padding: "8px 16px",
+      padding: "12px 20px",
       display: "flex",
       alignItems: "center",
-      gap: "16px",
+      gap: "20px",
     }}>
       {/* Title */}
       <div style={{
         ...PIXEL_FONT,
-        fontSize: "12px",
+        fontSize: "20px",
         color: COLORS.gold,
-        letterSpacing: "2px",
+        letterSpacing: "3px",
         whiteSpace: "nowrap",
         animation: "shimmer 4s infinite ease",
       }}>
         AUTOLOGUE
       </div>
 
-      <div style={{ width: "1px", height: "24px", background: COLORS.panelBorder }} />
+      <div style={{ width: "1px", height: "32px", background: COLORS.panelBorder }} />
 
       {/* Quest name */}
       <div style={{
@@ -98,8 +98,7 @@ export function StatusBar() {
       </div>
 
       {/* Stats row */}
-      <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-        {/* Timer */}
+      <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
         <div style={{
           ...PIXEL_FONT_SM,
           color: COLORS.textMid,
@@ -108,7 +107,6 @@ export function StatusBar() {
           {formatTime(elapsed)}
         </div>
 
-        {/* Score */}
         <div style={{
           ...PIXEL_FONT_SM,
           color: COLORS.gold,
@@ -117,23 +115,22 @@ export function StatusBar() {
           {state.score} G
         </div>
 
-        {/* Level */}
         <div style={{
           ...PIXEL_FONT_SM,
           color: COLORS.expGold,
           background: COLORS.bgPanel,
           border: `1px solid ${COLORS.expGoldDark}`,
-          padding: "2px 6px",
+          padding: "3px 10px",
           animation: "sway 5s infinite ease",
         }}>
           LV{state.level}
         </div>
       </div>
 
-      <div style={{ width: "1px", height: "24px", background: COLORS.panelBorder }} />
+      <div style={{ width: "1px", height: "32px", background: COLORS.panelBorder }} />
 
       {/* Bars */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: "200px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "280px" }}>
         <PixelBar label="HP" current={Math.max(0, contextRemaining)} max={state.contextMax} color={COLORS.hpRed} darkColor={COLORS.hpRedDark} danger={hpPct < 20} />
         <PixelBar label="MP" current={state.mp} max={state.mpMax} color={COLORS.mpBlue} darkColor={COLORS.mpBlueDark} danger={mpPct < 20} />
       </div>

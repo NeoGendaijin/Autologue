@@ -84,6 +84,7 @@ export function VictoryScreen() {
   const lastResult = useGameStore((s) => s.state.lastResult);
   const resetState = useGameStore((s) => s.resetState);
   const deleteOutput = useGameStore((s) => s.deleteOutput);
+  const continueProject = useGameStore((s) => s.continueProject);
 
   const files = lastResult?.filesCreated || [];
   const contents = lastResult?.fileContents || {};
@@ -114,6 +115,11 @@ export function VictoryScreen() {
       setDeleted(true);
     }
     setTimeout(() => resetState(), 200);
+  };
+  const handleContinue = () => {
+    if (lastResult.outputDir) {
+      continueProject(lastResult.outputDir);
+    }
   };
 
   const isWide = view === "preview" || view === "files";
@@ -146,7 +152,7 @@ export function VictoryScreen() {
         <div style={{ textAlign: "center", marginBottom: "8px", flexShrink: 0 }}>
           <div style={{
             ...PIXEL_FONT,
-            fontSize: "16px",
+            fontSize: "22px",
             color: COLORS.gold,
             textShadow: `0 0 15px ${COLORS.gold}66, 2px 2px 0 #000`,
             letterSpacing: "4px",
@@ -157,7 +163,7 @@ export function VictoryScreen() {
           <div style={{ display: "flex", gap: "6px", justifyContent: "center", margin: "6px 0" }}>
             {[1, 2, 3].map((n) => (
               <span key={n} style={{
-                fontSize: "18px",
+                fontSize: "22px",
                 filter: n <= stars ? "none" : "grayscale(1) opacity(0.3)",
               }}>
                 {n <= stars ? "\u2B50" : "\u2606"}
@@ -165,7 +171,7 @@ export function VictoryScreen() {
             ))}
             <span style={{
               ...PIXEL_FONT,
-              fontSize: "22px",
+              fontSize: "26px",
               color: rankColor,
               textShadow: `0 0 12px ${rankColor}66, 1px 1px 0 #000`,
               marginLeft: "8px",
@@ -221,7 +227,7 @@ export function VictoryScreen() {
               padding: "2px 8px",
               background: `${COLORS.bgDark}dd`,
               ...PIXEL_FONT_SM,
-              fontSize: "6px",
+              fontSize: "9px",
               color: COLORS.textDim,
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -242,7 +248,7 @@ export function VictoryScreen() {
               background: COLORS.bgDark,
               border: `2px solid ${COLORS.panelBorder}`,
             }}>
-              <div style={{ ...PIXEL_FONT_SM, color: COLORS.textDim, letterSpacing: "2px", marginBottom: "6px", fontSize: "7px" }}>
+              <div style={{ ...PIXEL_FONT_SM, color: COLORS.textDim, letterSpacing: "2px", marginBottom: "6px" }}>
                 BATTLE RESULTS
               </div>
               {[
@@ -257,9 +263,8 @@ export function VictoryScreen() {
                 <div key={row.label} style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  padding: "2px 0",
+                  padding: "3px 0",
                   ...PIXEL_FONT_SM,
-                  fontSize: "8px",
                 }}>
                   <span style={{ color: COLORS.textDim }}>{row.label}</span>
                   <span style={{ color: row.color }}>{row.value}</span>
@@ -275,15 +280,14 @@ export function VictoryScreen() {
                 background: COLORS.bgDark,
                 border: `2px solid ${COLORS.healGreen}22`,
               }}>
-                <div style={{ ...PIXEL_FONT_SM, color: COLORS.textDim, letterSpacing: "2px", marginBottom: "4px", fontSize: "7px" }}>
+                <div style={{ ...PIXEL_FONT_SM, color: COLORS.textDim, letterSpacing: "2px", marginBottom: "4px" }}>
                   LOOT ({files.length} files)
                 </div>
                 {files.map((f) => (
                   <div key={f} style={{
                     ...PIXEL_FONT_SM,
                     color: COLORS.ice,
-                    fontSize: "7px",
-                    padding: "1px 0",
+                    padding: "2px 0",
                     cursor: "pointer",
                   }} onClick={() => { setView("files"); setActiveTab(files.indexOf(f)); }}>
                     {"  \u25B8 "}{f}
@@ -294,7 +298,7 @@ export function VictoryScreen() {
 
             {lastResult.achievements.length > 0 && (
               <div style={{ marginBottom: "10px" }}>
-                <div style={{ ...PIXEL_FONT_SM, color: COLORS.textDim, letterSpacing: "2px", marginBottom: "6px", fontSize: "7px" }}>
+                <div style={{ ...PIXEL_FONT_SM, color: COLORS.textDim, letterSpacing: "2px", marginBottom: "6px" }}>
                   SKILLS LEARNED
                 </div>
                 <div style={{ display: "flex", gap: "6px", justifyContent: "center", flexWrap: "wrap" }}>
@@ -302,9 +306,8 @@ export function VictoryScreen() {
                     <div key={a.id} style={{
                       background: COLORS.bgDark,
                       border: `1px solid ${COLORS.poison}44`,
-                      padding: "3px 6px",
+                      padding: "4px 8px",
                       ...PIXEL_FONT_SM,
-                      fontSize: "7px",
                       color: COLORS.poison,
                     }} title={a.description}>
                       {a.icon} {a.name}
@@ -331,8 +334,7 @@ export function VictoryScreen() {
                   onClick={() => setActiveTab(i)}
                   style={{
                     ...PIXEL_FONT_SM,
-                    fontSize: "7px",
-                    padding: "3px 8px",
+                    padding: "4px 10px",
                     background: activeTab === i ? COLORS.bgDark : "transparent",
                     border: `1px solid ${activeTab === i ? COLORS.ice : COLORS.panelBorder}`,
                     color: activeTab === i ? COLORS.ice : COLORS.textDim,
@@ -377,28 +379,44 @@ export function VictoryScreen() {
               onClick={handleDeleteAndNext}
               style={{
                 ...PIXEL_FONT_SM,
-                fontSize: "7px",
                 background: COLORS.bgDark,
                 border: `2px solid ${COLORS.hpRed}44`,
                 color: COLORS.hpRed,
-                padding: "6px 14px",
+                padding: "8px 16px",
                 cursor: "pointer",
               }}
             >
               DELETE & NEXT
             </button>
           )}
+          {lastResult.outputDir && !deleted && (
+            <button
+              onClick={handleContinue}
+              style={{
+                ...PIXEL_FONT,
+                fontSize: "12px",
+                background: `${COLORS.healGreen}11`,
+                border: `2px solid ${COLORS.healGreen}66`,
+                color: COLORS.healGreen,
+                padding: "8px 20px",
+                cursor: "pointer",
+                letterSpacing: "1px",
+                animation: "pulseGlow 2s infinite",
+              }}
+            >
+              CONTINUE {"\u21BB"}
+            </button>
+          )}
           <button
             onClick={handleKeepAndNext}
             style={{
               ...PIXEL_FONT,
-              fontSize: "9px",
+              fontSize: "12px",
               background: COLORS.bgDark,
               border: `2px solid ${COLORS.gold}66`,
               color: COLORS.gold,
-              padding: "6px 20px",
+              padding: "8px 22px",
               cursor: "pointer",
-              animation: "pulseGlow 2s infinite",
               letterSpacing: "1px",
             }}
           >
@@ -411,7 +429,6 @@ export function VictoryScreen() {
             textAlign: "center",
             marginTop: "4px",
             ...PIXEL_FONT_SM,
-            fontSize: "7px",
             color: COLORS.textDim,
             flexShrink: 0,
           }}>
@@ -432,8 +449,7 @@ function TabBtn({ label, active, onClick, accent }: {
       onClick={onClick}
       style={{
         ...PIXEL_FONT_SM,
-        fontSize: "7px",
-        padding: "4px 12px",
+        padding: "6px 14px",
         background: active ? `${accent}22` : COLORS.bgDark,
         border: `1px solid ${active ? accent : COLORS.panelBorder}`,
         color: active ? accent : COLORS.textDim,

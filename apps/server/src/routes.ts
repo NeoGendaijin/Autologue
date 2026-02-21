@@ -1,7 +1,11 @@
 import { Router } from "express";
-import { resolve } from "node:path";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { readdirSync, readFileSync, existsSync, statSync } from "node:fs";
 import type { WsHandler } from "./ws-handler.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = resolve(__dirname, "../../..");
 
 const EMOJI_MAP: Record<string, string> = {
   pong: "\uD83C\uDFD3", ping: "\uD83C\uDFD3", paddle: "\uD83C\uDFD3",
@@ -29,7 +33,7 @@ function pickEmoji(dirName: string, title: string): string {
 }
 
 function loadExampleQuests(): Array<{ emoji: string; label: string; prompt: string; cwd: string }> {
-  const examplesDir = resolve(process.cwd(), "examples");
+  const examplesDir = resolve(PROJECT_ROOT, "examples");
   if (!existsSync(examplesDir)) return [];
 
   const entries = readdirSync(examplesDir);

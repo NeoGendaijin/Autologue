@@ -15,3 +15,6 @@ export * from "./event-mapper/mapper.js";
 // Gemini Adapter (types only, no process management)
 export * from "./gemini-adapter/types.js";
 export * from "./gemini-adapter/stdin-relay.js";
+
+// WebSocket Protocol
+export * from "./ws-protocol.js";

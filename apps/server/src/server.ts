@@ -1,5 +1,6 @@
 import http from "node:http";
-import { resolve } from "node:path";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import cors from "cors";
 import { WebSocketServer } from "ws";
@@ -8,6 +9,7 @@ import { createRoutes } from "./routes.js";
 
 export function createServer(): http.Server {
   const app = express();
+  const __dirname = dirname(fileURLToPath(import.meta.url));
 
   app.use(cors());
   app.use(express.json());
@@ -15,6 +17,10 @@ export function createServer(): http.Server {
   // Serve generated output files so the browser can preview them (HTML games, etc.)
   const outputDir = resolve(process.cwd(), "output");
   app.use("/output", express.static(outputDir));
+
+  // Serve static stage assets (battle backgrounds, etc.)
+  const assetDir = resolve(__dirname, "../asset");
+  app.use("/asset", express.static(assetDir));
 
   const httpServer = http.createServer(app);
 

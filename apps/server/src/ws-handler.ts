@@ -1,67 +1,53 @@
 import crypto from "node:crypto";
 import { rmSync } from "node:fs";
+import { resolve, relative, isAbsolute } from "node:path";
 import type { WebSocket } from "ws";
 import { GeminiSession } from "./gemini-session.js";
-import type { TacticType } from "@agent-quest/core";
-
-interface StartQuestMessage {
-  type: "start-quest";
-  prompt: string;
-  cwd?: string;
-  mode?: "expert" | "adventure";
-}
-
-interface PlayerChoiceMessage {
-  type: "player-choice";
-  choiceIndex: number;
-  responseText: string;
-}
-
-interface TacticMessage {
-  type: "tactic";
-  tactic: TacticType;
-}
-
-interface DeleteOutputMessage {
-  type: "delete-output";
-  outputDir: string;
-}
-
-type ClientMessage = StartQuestMessage | PlayerChoiceMessage | TacticMessage | DeleteOutputMessage;
+import {
+  parseClientToServerMessage,
+  type ClientToServerMessage,
+  type ServerToClientMessage,
+} from "@agent-quest/core";
 
 export class WsHandler {
   private sessions = new Map<string, GeminiSession>();
+  private readonly outputRoot = resolve(process.cwd(), "output");
 
   handleConnection(ws: WebSocket): void {
     const sessionId = crypto.randomUUID();
 
-    ws.send(JSON.stringify({ type: "session-id", sessionId }));
+    this.send(ws, { type: "session-id", sessionId });
 
     ws.on("message", (data) => {
+      let parsedJson: unknown;
       try {
-        const message = JSON.parse(String(data)) as ClientMessage;
+        parsedJson = JSON.parse(String(data));
+      } catch {
+        this.send(ws, { type: "error", message: "Invalid JSON payload" });
+        return;
+      }
+
+      const message = parseClientToServerMessage(parsedJson);
+      if (!message) {
+        this.send(ws, { type: "error", message: "Invalid message payload" });
+        return;
+      }
+
+      try {
         this.handleMessage(ws, sessionId, message);
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : "Invalid message";
-        ws.send(JSON.stringify({ type: "error", message: errorMsg }));
+        this.send(ws, { type: "error", message: errorMsg });
       }
     });
 
     ws.on("close", () => {
-      const session = this.sessions.get(sessionId);
-      if (session) {
-        session.destroy();
-        this.sessions.delete(sessionId);
-      }
+      this.cleanupSession(sessionId);
     });
 
     ws.on("error", (err) => {
       console.error(`[ws] Error for session ${sessionId}:`, err.message);
-      const session = this.sessions.get(sessionId);
-      if (session) {
-        session.destroy();
-        this.sessions.delete(sessionId);
-      }
+      this.cleanupSession(sessionId);
     });
   }
 
@@ -72,7 +58,7 @@ export class WsHandler {
   private handleMessage(
     ws: WebSocket,
     sessionId: string,
-    message: ClientMessage
+    message: ClientToServerMessage
   ): void {
     switch (message.type) {
       case "start-quest": {
@@ -92,23 +78,17 @@ export class WsHandler {
 
         // Subscribe to session events and relay to the WebSocket client
         session.on("game-event", (event) => {
-          if (ws.readyState === ws.OPEN) {
-            ws.send(JSON.stringify({ type: "game-event", event }));
-          }
+          this.send(ws, { type: "game-event", event });
         });
 
         session.on("state-update", (state) => {
-          if (ws.readyState === ws.OPEN) {
-            ws.send(JSON.stringify({ type: "state-update", state }));
-          }
+          this.send(ws, { type: "state-update", state });
         });
 
         // Start the session (runs asynchronously)
         session.start().catch((err) => {
           const errorMsg = err instanceof Error ? err.message : "Session start failed";
-          if (ws.readyState === ws.OPEN) {
-            ws.send(JSON.stringify({ type: "error", message: errorMsg }));
-          }
+          this.send(ws, { type: "error", message: errorMsg });
         });
 
         break;
@@ -132,21 +112,46 @@ export class WsHandler {
 
       case "delete-output": {
         try {
-          const dir = message.outputDir;
-          // Safety: only allow deleting inside the output/ directory
-          if (dir && dir.includes("/output/") && !dir.includes("..")) {
-            rmSync(dir, { recursive: true, force: true });
-            ws.send(JSON.stringify({ type: "output-deleted", outputDir: dir }));
-            console.log(`[ws] Deleted output: ${dir}`);
-          } else {
-            ws.send(JSON.stringify({ type: "error", message: "Invalid output directory" }));
+          const targetDir = this.resolveOutputTarget(message.outputDir);
+          if (!targetDir) {
+            this.send(ws, { type: "error", message: "Invalid output directory" });
+            return;
           }
+
+          rmSync(targetDir, { recursive: true, force: true });
+          this.send(ws, { type: "output-deleted", outputDir: targetDir });
+          console.log(`[ws] Deleted output: ${targetDir}`);
         } catch (err) {
           const msg = err instanceof Error ? err.message : "Delete failed";
-          ws.send(JSON.stringify({ type: "error", message: msg }));
+          this.send(ws, { type: "error", message: msg });
         }
         break;
       }
     }
+  }
+
+  private send(ws: WebSocket, message: ServerToClientMessage): void {
+    if (ws.readyState === ws.OPEN) {
+      ws.send(JSON.stringify(message));
+    }
+  }
+
+  private cleanupSession(sessionId: string): void {
+    const session = this.sessions.get(sessionId);
+    if (!session) return;
+    session.destroy();
+    this.sessions.delete(sessionId);
+  }
+
+  private resolveOutputTarget(inputPath: string): string | null {
+    const target = resolve(inputPath);
+    const rel = relative(this.outputRoot, target);
+
+    // Must stay under output/ and never allow deleting output root itself.
+    if (!rel || rel.startsWith("..") || isAbsolute(rel)) {
+      return null;
+    }
+
+    return target;
   }
 }

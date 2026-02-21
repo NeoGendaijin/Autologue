@@ -1,6 +1,6 @@
 import { EventEmitter } from "eventemitter3";
 import { mkdirSync, readFileSync, existsSync } from "node:fs";
-import { resolve, join } from "node:path";
+import { resolve, relative, isAbsolute } from "node:path";
 import {
   EventMapper,
   createInitialState,
@@ -158,18 +158,29 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
   private readOutputFiles(files: string[]): Record<string, string> {
     const contents: Record<string, string> = {};
     for (const relPath of files) {
-      const absPath = join(this.outputDir, relPath.replace(/\.\.\//g, "").replace(/^\//g, ""));
-      if (existsSync(absPath)) {
-        try {
-          const raw = readFileSync(absPath, "utf-8");
-          // Truncate to 10KB per file to keep payload reasonable
-          contents[relPath] = raw.slice(0, 10_000);
-        } catch {
-          contents[relPath] = "(Could not read file)";
-        }
+      const absPath = this.resolveOutputPath(relPath);
+      if (!absPath || !existsSync(absPath)) {
+        continue;
+      }
+
+      try {
+        const raw = readFileSync(absPath, "utf-8");
+        // Truncate to 10KB per file to keep payload reasonable
+        contents[relPath] = raw.slice(0, 10_000);
+      } catch {
+        contents[relPath] = "(Could not read file)";
       }
     }
     return contents;
+  }
+
+  private resolveOutputPath(relPath: string): string | null {
+    const target = resolve(this.outputDir, relPath);
+    const rel = relative(this.outputDir, target);
+    if (rel.startsWith("..") || isAbsolute(rel)) {
+      return null;
+    }
+    return target;
   }
 
   private applyEvent(event: GameEvent): void {

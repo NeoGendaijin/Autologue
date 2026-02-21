@@ -41,8 +41,8 @@
   100% { transform: translateX(0); }
 }
 
-/* Hero gets hit — flash red and recoil */
-@keyframes heroHit {
+/* Main agent gets hit — flash red and recoil */
+@keyframes agentHit {
   0% { filter: brightness(1); transform: translateX(0); }
   15% { filter: brightness(2) sepia(1) hue-rotate(-30deg); transform: translateX(-10px); }
   30% { filter: brightness(1); transform: translateX(5px); }
@@ -218,6 +218,18 @@
   to { background-position-x: -32px; }
 }
 
+/* Slow panoramic drift for stage background */
+@keyframes bgPanSlow {
+  from { background-position: 0% 50%; }
+  to { background-position: 100% 50%; }
+}
+
+/* Secondary slower drift layer */
+@keyframes bgPanSlower {
+  from { background-position: 100% 50%; }
+  to { background-position: 0% 50%; }
+}
+
 /* Border glow animation for active panels */
 @keyframes borderGlow {
   0%, 100% { border-color: #2a2a4a; }
@@ -232,6 +244,30 @@
   60% { color: #44aaff; }
   80% { color: #aa44ff; }
   100% { color: #ff4444; }
+}
+
+/* Enemy speech bubble appear */
+@keyframes speechBubble {
+  0% { transform: scale(0) translateY(10px); opacity: 0; }
+  40% { transform: scale(1.1) translateY(-2px); opacity: 1; }
+  60% { transform: scale(0.95) translateY(0); }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Enemy taunt — menacing loom */
+@keyframes taunt {
+  0%, 100% { transform: scale(1) translateY(0); }
+  15% { transform: scale(1.15) translateY(-8px); }
+  30% { transform: scale(1.05) translateY(-3px); }
+  50% { transform: scale(1.12) translateY(-6px); }
+  70% { transform: scale(1.03) translateY(-2px); }
+}
+
+/* Choice button slide up stagger */
+@keyframes choiceSlideUp {
+  0% { transform: translateY(30px) scale(0.9); opacity: 0; }
+  60% { transform: translateY(-4px) scale(1.02); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 /* Scrollbar styling */

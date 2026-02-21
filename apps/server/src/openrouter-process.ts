@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, statSync } from "node:fs";
-import { join, dirname, resolve } from "node:path";
+import { join, dirname, resolve, relative, isAbsolute } from "node:path";
 import type { GeminiEvent } from "@agent-quest/core";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
@@ -371,9 +371,12 @@ export class OpenRouterProcess {
   }
 
   private resolvePath(relPath: string): string {
-    // Prevent path traversal
-    const normalized = relPath.replace(/\.\.\//g, "").replace(/^\//g, "");
-    return resolve(this.outputDir, normalized);
+    const target = resolve(this.outputDir, relPath);
+    const rel = relative(this.outputDir, target);
+    if (rel.startsWith("..") || isAbsolute(rel)) {
+      throw new Error(`Invalid path outside output directory: ${relPath}`);
+    }
+    return target;
   }
 
   private async callAPI(): Promise<{

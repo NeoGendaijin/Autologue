@@ -15,3 +15,6 @@ export * from "./game-engine/tactics.js";
 export * from "./event-mapper/patterns.js";
 export * from "./event-mapper/action-classifier.js";
 export * from "./event-mapper/mapper.js";
+
+// WebSocket Protocol
+export * from "./ws-protocol.js";

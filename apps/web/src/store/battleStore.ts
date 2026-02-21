@@ -33,15 +33,15 @@ interface BattleState {
   damageNumbers: DamageNumber[];
   battleLog: BattleLogEntry[];
   screenShake: boolean;
-  heroAttacking: boolean;
-  heroHit: boolean;
+  agentAttacking: boolean;
+  agentHit: boolean;
 }
 
 interface BattleActions {
   spawnEncounter: (toolName: string | undefined, description: string) => void;
   defeatCurrent: () => void;
-  triggerHeroAttack: () => void;
-  triggerHeroHit: () => void;
+  triggerAgentAttack: () => void;
+  triggerAgentHit: () => void;
   addBattleLog: (text: string) => void;
   addDamageNumber: (value: string, isCrit: boolean, color: string) => void;
   reset: () => void;
@@ -59,8 +59,8 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
   damageNumbers: [],
   battleLog: [],
   screenShake: false,
-  heroAttacking: false,
-  heroHit: false,
+  agentAttacking: false,
+  agentHit: false,
 
   spawnEncounter: (toolName: string | undefined, description: string) => {
     const def = getEnemyForTool(toolName);
@@ -97,14 +97,14 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     });
   },
 
-  triggerHeroAttack: () => {
-    set({ heroAttacking: true });
-    setTimeout(() => set({ heroAttacking: false }), 500);
+  triggerAgentAttack: () => {
+    set({ agentAttacking: true });
+    setTimeout(() => set({ agentAttacking: false }), 500);
   },
 
-  triggerHeroHit: () => {
-    set({ heroHit: true, screenShake: true });
-    setTimeout(() => set({ heroHit: false, screenShake: false }), 600);
+  triggerAgentHit: () => {
+    set({ agentHit: true, screenShake: true });
+    setTimeout(() => set({ agentHit: false, screenShake: false }), 600);
   },
 
   addBattleLog: (text: string) => {
@@ -139,8 +139,8 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       damageNumbers: [],
       battleLog: [],
       screenShake: false,
-      heroAttacking: false,
-      heroHit: false,
+      agentAttacking: false,
+      agentHit: false,
     });
   },
 }));
@@ -189,31 +189,31 @@ useGameStore.subscribe((state) => {
             // File write → new encounter
             battle.spawnEncounter("write_file", entry.text);
             const dmg = 5 + Math.floor(Math.random() * 8);
-            battle.triggerHeroAttack();
+            battle.triggerAgentAttack();
             battle.addDamageNumber(String(dmg), false, "#ffffff");
-            battle.addBattleLog(`Hero strikes! ${dmg} damage!`);
+            battle.addBattleLog(`Agent strikes! ${dmg} damage!`);
           } else if (/^Generating code/i.test(entry.text)) {
             battle.spawnEncounter("write_file", entry.text);
             const dmg = 8 + Math.floor(Math.random() * 12);
-            battle.triggerHeroAttack();
+            battle.triggerAgentAttack();
             battle.addDamageNumber(String(dmg), false, "#66ccff");
-            battle.addBattleLog(`Hero casts FORGE! ${dmg} damage!`);
+            battle.addBattleLog(`Agent casts FORGE! ${dmg} damage!`);
           } else if (/^Using tool:\s*(\w+)/i.test(entry.text)) {
             const match = entry.text.match(/^Using tool:\s*(\w+)/i);
             const tool = match?.[1];
             battle.spawnEncounter(tool, entry.text);
             const dmg = 3 + Math.floor(Math.random() * 5);
-            battle.triggerHeroAttack();
+            battle.triggerAgentAttack();
             battle.addDamageNumber(String(dmg), false, "#ffffff");
             battle.addBattleLog(`Quick strike! ${dmg} damage!`);
           } else if (/^Reading\b/i.test(entry.text)) {
             battle.spawnEncounter("read_file", entry.text);
-            battle.addBattleLog("Hero scouts ahead...");
+            battle.addBattleLog("Agent scouts ahead...");
             // Instantly defeat read encounters (they're quick)
             setTimeout(() => battle.defeatCurrent(), 400);
           } else if (/^Running tests/i.test(entry.text)) {
             battle.spawnEncounter("run_command", entry.text);
-            battle.addBattleLog("Hero prepares VERIFY...");
+            battle.addBattleLog("Agent prepares VERIFY...");
           }
           break;
         }
@@ -221,7 +221,7 @@ useGameStore.subscribe((state) => {
           if (/test.*passed/i.test(entry.text)) {
             battle.defeatCurrent();
             const dmg = 15 + Math.floor(Math.random() * 10);
-            battle.triggerHeroAttack();
+            battle.triggerAgentAttack();
             battle.addDamageNumber(String(dmg), true, "#ffff44");
             battle.addBattleLog(`CRITICAL HIT! ${dmg} damage!`);
           } else if (/Sub-agent completed/i.test(entry.text)) {
@@ -230,7 +230,7 @@ useGameStore.subscribe((state) => {
           break;
         }
         case "error": {
-          battle.triggerHeroHit();
+          battle.triggerAgentHit();
           if (/test.*failed/i.test(entry.text)) {
             battle.addBattleLog("Enemy counterattacks!");
             battle.addDamageNumber("!", false, "#ff4444");
@@ -250,7 +250,7 @@ useGameStore.subscribe((state) => {
           break;
         }
         case "question": {
-          battle.addBattleLog("Hero seeks your guidance...");
+          battle.addBattleLog("Enemy challenges you! Choose your path!");
           break;
         }
         default:

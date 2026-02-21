@@ -41,32 +41,32 @@ export const PIXEL_FONT = {
 
 export const PIXEL_FONT_SM = {
   ...PIXEL_FONT,
-  fontSize: "8px",
-  lineHeight: "14px",
+  fontSize: "11px",
+  lineHeight: "18px",
 } as const;
 
 export const PIXEL_FONT_MD = {
   ...PIXEL_FONT,
-  fontSize: "10px",
-  lineHeight: "16px",
+  fontSize: "13px",
+  lineHeight: "20px",
 } as const;
 
 export const PIXEL_FONT_LG = {
   ...PIXEL_FONT,
-  fontSize: "14px",
-  lineHeight: "22px",
+  fontSize: "18px",
+  lineHeight: "26px",
 } as const;
 
 // Agent type → emoji + name mapping
 export const AGENT_SPRITES: Record<string, { emoji: string; name: string }> = {
-  main: { emoji: "\u2694\uFE0F", name: "Hero" },
+  main: { emoji: "\u2694\uFE0F", name: "Agent" },
   search: { emoji: "\uD83D\uDD2E", name: "Scout" },
   test: { emoji: "\uD83D\uDEE1\uFE0F", name: "Guard" },
   docs: { emoji: "\uD83D\uDCDC", name: "Scribe" },
   fix: { emoji: "\uD83D\uDD27", name: "Smith" },
 };
 
-// --- Pixel Art Hero (CSS box-shadow sprite) ---
+// --- Pixel Art Main Agent (CSS box-shadow sprite) ---
 // 10x14 pixel knight, each cell = [row, col, color]
 // _ = transparent, S = skin, H = helmet, A = armor, W = weapon, L = legs, C = cape
 const _ = null;
@@ -77,7 +77,7 @@ const W = "#ccccdd"; // weapon/sword
 const L = "#333355"; // legs
 const C = "#cc3333"; // cape accent
 
-export const HERO_PIXELS: (string | null)[][] = [
+export const AGENT_PIXELS: (string | null)[][] = [
   [_, _, _, H, H, H, _, _, _, _],
   [_, _, H, H, H, H, H, _, _, _],
   [_, _, H, S, S, S, H, _, _, _],
