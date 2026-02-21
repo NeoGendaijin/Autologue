@@ -9,6 +9,18 @@ export const QUESTION_PATTERNS: RegExp[] = [
   /do you prefer\b.+\bor\b/i,  // "Do you prefer X or Y?"
 ];
 
+/** Broader patterns for expert mode — catch more decision points. */
+export const QUESTION_PATTERNS_EXPERT: RegExp[] = [
+  ...QUESTION_PATTERNS,
+  /should I\b.+\?/i,            // "Should I add tests?"
+  /shall I\b.+\?/i,             // "Shall I refactor this?"
+  /would you (?:like|prefer|want)\b.+\?/i, // "Would you like me to...?"
+  /which (?:approach|method|option|way|style|pattern|library|framework)\b/i,
+  /do you want\b.+\?/i,         // "Do you want me to...?"
+  /how should I\b.+\?/i,        // "How should I handle...?"
+  /what (?:should|would)\b.+\?/i, // "What should I use for...?"
+];
+
 /** Patterns that indicate subagent spawning */
 export const SUBAGENT_PATTERNS: RegExp[] = [
   /spawning\s+(sub-?)?agent/i,

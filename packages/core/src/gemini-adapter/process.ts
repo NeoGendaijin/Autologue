@@ -1,4 +1,5 @@
 import { spawn, type ChildProcess } from "node:child_process";
+import { resolve } from "node:path";
 import { createGeminiEventStream } from "./parser.js";
 import type { GeminiEvent } from "./types.js";
 
@@ -56,13 +57,40 @@ export class GeminiProcess {
     const spawnCommand = this.options.nodePath ?? binary;
     const spawnArgs = this.options.nodePath ? [binary, ...args] : args;
 
+    const keyFromOptions = this.options.env?.GEMINI_API_KEY;
+    const keyFromGoogleOption = this.options.env?.GOOGLE_API_KEY;
+    const inheritedKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
+    const geminiApiKey = keyFromOptions || keyFromGoogleOption || inheritedKey;
+
+    const defaultGeminiCliHome =
+      this.options.cwd != null
+        ? resolve(this.options.cwd, ".gemini-cli-home")
+        : resolve(process.cwd(), ".gemini-cli-home");
+
+    const childEnv: NodeJS.ProcessEnv = {
+      ...process.env,
+      ...this.options.env,
+      // Force API-key mode for headless automation.
+      GEMINI_DEFAULT_AUTH_TYPE:
+        this.options.env?.GEMINI_DEFAULT_AUTH_TYPE ??
+        process.env.GEMINI_DEFAULT_AUTH_TYPE ??
+        "gemini-api-key",
+      // Isolate CLI auth/settings so a stale OAuth preference does not break API-key runs.
+      GEMINI_CLI_HOME:
+        this.options.env?.GEMINI_CLI_HOME ??
+        process.env.GEMINI_CLI_HOME ??
+        defaultGeminiCliHome,
+    };
+
+    if (geminiApiKey) {
+      childEnv.GEMINI_API_KEY = geminiApiKey;
+      childEnv.GOOGLE_API_KEY = geminiApiKey;
+    }
+
     this.child = spawn(spawnCommand, spawnArgs, {
       cwd: this.options.cwd,
       stdio: ["pipe", "pipe", "pipe"],
-      env: {
-        ...process.env,
-        ...this.options.env,
-      },
+      env: childEnv,
     });
 
     this._isRunning = true;

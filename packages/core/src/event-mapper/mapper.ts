@@ -8,6 +8,7 @@ import type {
 } from "../game-engine/events.js";
 import {
   QUESTION_PATTERNS,
+  QUESTION_PATTERNS_EXPERT,
   SUBAGENT_PATTERNS,
   TEST_COMMAND_PATTERNS,
   TEST_PASS_PATTERNS,
@@ -28,12 +29,17 @@ import {
 export class EventMapper {
   private lastToolUseAction: AgentAction | null = null;
   private subagentCounter = 0;
+  private mode: "expert" | "adventure";
 
   // Auto-spawn tracking
   private readCount = 0;
   private writeCount = 0;
   private testCount = 0;
   private spawnedTypes = new Set<string>();
+
+  constructor(mode: "expert" | "adventure" = "adventure") {
+    this.mode = mode;
+  }
 
   /**
    * Transform a Gemini event into game events.
@@ -73,8 +79,9 @@ export class EventMapper {
     const events: GameEvent[] = [];
 
     if (event.role === "model") {
-      // Check for question patterns
-      if (matchesAny(event.content, QUESTION_PATTERNS)) {
+      // Check for question patterns (expert mode uses broader patterns)
+      const questionPatterns = this.mode === "expert" ? QUESTION_PATTERNS_EXPERT : QUESTION_PATTERNS;
+      if (matchesAny(event.content, questionPatterns)) {
         events.push({
           type: "QUESTION",
           question: generateQuestionFromText(event.content),
@@ -228,7 +235,7 @@ export class EventMapper {
       {
         type: "ERROR",
         message: event.message ?? "Unknown error",
-        severity: "fatal",
+        severity: event.severity === "warning" ? "warning" : "fatal",
       },
     ];
   }

@@ -5,7 +5,7 @@ import type { GeminiEvent } from "@agent-quest/core";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_MODEL = "google/gemini-2.0-flash-001";
 
-const SYSTEM_PROMPT = `You are an AI coding agent completing a quest. You must use your tools to accomplish the task.
+const SYSTEM_PROMPT_BASE = `You are an AI coding agent completing a quest. You must use your tools to accomplish the task.
 
 RULES:
 - Think step by step. Explain your reasoning briefly before each action.
@@ -16,14 +16,24 @@ RULES:
 - Always write files — do not just describe code, actually create it.
 - For complex tasks, break them into phases: Research → Plan → Code → Test.
 - Use list_files and read_file to explore before writing.
-- After writing code, verify by running tests or the program itself.
+- After writing code, verify by running tests or the program itself.`;
 
+const ASK_DIRECTION_ADVENTURE = `
 IMPORTANT — ASK FOR DIRECTION (sparingly!):
 - Only ask when there is a genuine fork in the road — a real design choice that changes the outcome.
 - Ask at most 1-2 questions total. Most quests need zero or one.
 - Frame each question as a super-short "A or B?" — max 10 words. Example: "Should I use Canvas or DOM?"
 - Never ask for permission to proceed, never ask yes/no confirmation, never ask vague open-ended questions.
 - Do NOT ask before starting. Just start. Only ask mid-quest if you truly need direction.`;
+
+const ASK_DIRECTION_EXPERT = `
+IMPORTANT — ASK FOR DIRECTION:
+- Before making significant design decisions, ask the user which approach they prefer.
+- Ask 3-5 questions throughout the quest at key decision points: architecture, library choices, naming, patterns, testing strategy, etc.
+- Frame each question concisely: "Should I use X or Y?" or "Which approach for Z?" or "How should I handle X?"
+- Ask one question at a time, then proceed with the answer.
+- Do NOT ask before starting — start working first, then ask when you hit a real decision point.
+- Never ask yes/no confirmation or vague open-ended questions.`;
 
 const TOOLS = [
   {
@@ -98,6 +108,7 @@ export interface OpenRouterProcessOptions {
   outputDir: string;
   model?: string;
   apiKey?: string;
+  mode?: "expert" | "adventure";
 }
 
 export class OpenRouterProcess {
@@ -111,6 +122,7 @@ export class OpenRouterProcess {
   private model: string;
   private prompt: string;
   private outputDir: string;
+  private mode: "expert" | "adventure";
   public filesCreated: string[] = [];
 
   constructor(options: OpenRouterProcessOptions) {
@@ -118,6 +130,7 @@ export class OpenRouterProcess {
     this.outputDir = options.outputDir;
     this.apiKey = options.apiKey || process.env.OPENROUTER_API_KEY || "";
     this.model = options.model || process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
+    this.mode = options.mode || "adventure";
   }
 
   start(): void {
@@ -127,8 +140,9 @@ export class OpenRouterProcess {
     // Ensure output directory exists
     mkdirSync(this.outputDir, { recursive: true });
 
+    const systemPrompt = SYSTEM_PROMPT_BASE + (this.mode === "expert" ? ASK_DIRECTION_EXPERT : ASK_DIRECTION_ADVENTURE);
     this.messages = [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       {
         role: "user",
         content: `Quest: ${this.prompt}\nWorking directory: ${this.outputDir}\n\nAll files you create will be saved to disk. Start working now. Use your tools.`,
@@ -281,8 +295,9 @@ export class OpenRouterProcess {
       });
 
       const content = msg.content || "";
-      const hasQuestion =
-        /should I\b.+\bor\b|do you prefer\b.+\bor\b/i.test(content);
+      const hasQuestion = this.mode === "expert"
+        ? /should I\b.+\?|shall I\b.+\?|would you (?:like|prefer|want)\b.+\?|which (?:approach|method|option|way|style|pattern|library|framework)\b|do you want\b.+\?|how should I\b.+\?|what (?:should|would)\b.+\?|do you prefer\b.+\bor\b/i.test(content)
+        : /should I\b.+\bor\b|do you prefer\b.+\bor\b/i.test(content);
 
       if (hasQuestion) {
         const input = await this.waitForInput();

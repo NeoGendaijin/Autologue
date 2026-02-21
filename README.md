@@ -63,6 +63,9 @@ OPENROUTER_MODEL=google/gemini-2.5-flash-lite
 # AGENT_BACKEND=gemini-cli
 # GEMINI_MODEL=gemini-2.5-flash
 # GEMINI_CLI_PATH=gemini
+# GEMINI_NODE_PATH=/path/to/node
+# GEMINI_API_KEY=...
+# GEMINI_DEFAULT_AUTH_TYPE=gemini-api-key
 ```
 
 If `OPENROUTER_MODEL` is omitted, server code falls back to `google/gemini-2.0-flash-001`.

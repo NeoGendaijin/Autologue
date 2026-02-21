@@ -59,7 +59,7 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
   constructor(options: GeminiSessionOptions) {
     super();
     this.options = options;
-    this.mapper = new EventMapper();
+    this.mapper = new EventMapper(options.mode);
     this.state = createInitialState();
     this.state = { ...this.state, mode: options.mode };
     this.backend = resolveAgentBackend();
@@ -206,12 +206,28 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
 
   private createProcess(prompt: string): AgentRuntime {
     if (this.backend === "gemini-cli") {
+      const geminiApiKey =
+        process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
+      const geminiCliEnv: Record<string, string> = {
+        GEMINI_DEFAULT_AUTH_TYPE:
+          process.env.GEMINI_DEFAULT_AUTH_TYPE || "gemini-api-key",
+      };
+
+      if (geminiApiKey) {
+        geminiCliEnv.GEMINI_API_KEY = geminiApiKey;
+        geminiCliEnv.GOOGLE_API_KEY = geminiApiKey;
+      }
+      if (process.env.GEMINI_CLI_HOME) {
+        geminiCliEnv.GEMINI_CLI_HOME = process.env.GEMINI_CLI_HOME;
+      }
+
       return new GeminiProcess({
         prompt,
         cwd: this.options.cwd || this.outputDir,
         model: process.env.GEMINI_MODEL,
         binaryPath: process.env.GEMINI_CLI_PATH,
         nodePath: process.env.GEMINI_NODE_PATH,
+        env: geminiCliEnv,
       });
     }
 
@@ -219,6 +235,7 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
       prompt,
       cwd: this.options.cwd,
       outputDir: this.outputDir,
+      mode: this.options.mode,
     });
   }
 

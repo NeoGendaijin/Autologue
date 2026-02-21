@@ -37,9 +37,10 @@ export const GeminiToolResultEventSchema = z.object({
 export const GeminiErrorEventSchema = z.object({
   type: z.literal("error"),
   timestamp: z.number().optional(),
+  severity: z.enum(["warning", "error"]).optional(),
   errorType: z.string().optional(),
   message: z.string().optional(),
-  code: z.number().optional(),
+  code: z.union([z.number(), z.string()]).optional(),
 });
 
 export const GeminiStatsSchema = z.object({
