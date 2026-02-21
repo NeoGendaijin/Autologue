@@ -41,6 +41,7 @@ function formatTime(ms: number): string {
 
 export function StatusBar() {
   const state = useGameStore((s) => s.state);
+  const returnToQuestBoard = useGameStore((s) => s.returnToQuestBoard);
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -72,16 +73,40 @@ export function StatusBar() {
       rowGap: "14px",
       flexWrap: "wrap",
     }}>
-      {/* Title */}
-      <div style={{
-        ...PIXEL_FONT,
-        fontSize: "34px",
-        color: COLORS.gold,
-        letterSpacing: "4px",
-        whiteSpace: "nowrap",
-        animation: "shimmer 4s infinite ease",
-      }}>
-        AUTOLOGUE
+      {/* Title + Home */}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div style={{
+          ...PIXEL_FONT,
+          fontSize: "34px",
+          color: COLORS.gold,
+          letterSpacing: "4px",
+          whiteSpace: "nowrap",
+          animation: "shimmer 4s infinite ease",
+        }}>
+          AUTOLOGUE
+        </div>
+        <button
+          onClick={returnToQuestBoard}
+          title="Return to Quest Board"
+          aria-label="Return to Quest Board"
+          style={{
+            ...PIXEL_FONT,
+            fontSize: "22px",
+            lineHeight: 1,
+            width: "52px",
+            height: "52px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: COLORS.bgPanel,
+            border: `2px solid ${COLORS.panelBorder}`,
+            color: COLORS.parchment,
+            cursor: "pointer",
+            boxShadow: "inset 0 0 0 1px #00000055",
+          }}
+        >
+          {"\uD83C\uDFE0"}
+        </button>
       </div>
 
       <div style={{ width: "2px", height: "54px", background: COLORS.panelBorder }} />

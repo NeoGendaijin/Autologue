@@ -9,6 +9,12 @@ import {
   parseServerToClientMessage,
 } from "@agent-quest/core/browser";
 
+export interface ContinueContext {
+  cwd: string;
+  prevQuest: string;
+  filesCreated: string[];
+}
+
 export interface GameStore {
   // State
   state: GameState;
@@ -17,6 +23,7 @@ export interface GameStore {
   sessionId: string | null;
   lastError: string | null;
   continueCwd: string | null;
+  continueContext: ContinueContext | null;
 
   // Actions
   connect: (url: string) => void;
@@ -29,6 +36,8 @@ export interface GameStore {
   deleteOutput: (outputDir: string) => void;
   continueProject: (cwd: string) => void;
   clearContinueCwd: () => void;
+  returnToQuestBoard: () => void;
+  revive: () => void;
 }
 
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -52,6 +61,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   sessionId: null,
   lastError: null,
   continueCwd: null,
+  continueContext: null,
 
   connect: (url: string) => {
     // Clean up existing connection
@@ -188,10 +198,44 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   continueProject: (cwd: string) => {
-    set({ continueCwd: cwd, state: createInitialState() });
+    const { state } = get();
+    const ctx: ContinueContext = {
+      cwd,
+      prevQuest: state.currentQuest?.description || "",
+      filesCreated: state.lastResult?.filesCreated || [],
+    };
+    set({ continueCwd: cwd, continueContext: ctx, state: createInitialState() });
   },
 
   clearContinueCwd: () => {
     set({ continueCwd: null });
+  },
+
+  revive: () => {
+    const { ws, connected } = get();
+    if (ws && connected) {
+      const message: ClientToServerMessage = { type: "revive" };
+      ws.send(JSON.stringify(message));
+    }
+  },
+
+  returnToQuestBoard: () => {
+    const { ws } = get();
+    const reconnectTarget = ws?.url || reconnectUrl || "ws://localhost:3001/ws";
+
+    // Close current session to force server-side cleanup, then reconnect fresh.
+    get().disconnect();
+    set({
+      state: createInitialState(),
+      lastError: null,
+      continueCwd: null,
+      continueContext: null,
+    });
+
+    setTimeout(() => {
+      if (!get().ws) {
+        get().connect(reconnectTarget);
+      }
+    }, 80);
   },
 }));

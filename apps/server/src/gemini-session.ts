@@ -63,6 +63,11 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
       logType: "info",
     });
 
+    // If the opening prompt already exhausted the party, don't start the model loop.
+    if (this.state.phase === "game-over") {
+      return;
+    }
+
     // Create and start the OpenRouter process
     this.process = new OpenRouterProcess({
       prompt: this.options.prompt,
@@ -135,6 +140,46 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
     }
   }
 
+  async revive(): Promise<void> {
+    if (this.state.phase !== "game-over") return;
+
+    // Apply revive event (+100K context)
+    this.applyEvent({ type: "REVIVE", addedContext: 100_000 });
+
+    // Restart the OpenRouter process to continue the quest
+    this.process = new OpenRouterProcess({
+      prompt: `Continue the previous task: ${this.options.prompt}`,
+      cwd: this.options.cwd,
+      outputDir: this.outputDir,
+    });
+    this.process.start();
+
+    try {
+      for await (const geminiEvent of this.process.getEventStream()) {
+        const gameEvents = this.mapper.map(geminiEvent);
+        for (const gameEvent of gameEvents) {
+          this.applyEvent(gameEvent);
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown stream error";
+      this.applyEvent({
+        type: "ERROR",
+        message,
+        severity: "fatal",
+      });
+    }
+
+    // Quest finished
+    if (this.state.phase === "running" || this.state.phase === "question") {
+      const result = buildQuestResult(this.state);
+      result.outputDir = this.outputDir;
+      result.filesCreated = this.process?.filesCreated ?? [];
+      result.fileContents = this.readOutputFiles(result.filesCreated);
+      this.applyEvent({ type: "QUEST_COMPLETE", result });
+    }
+  }
+
   getOutputDir(): string {
     return this.outputDir;
   }
@@ -184,8 +229,12 @@ export class GeminiSession extends EventEmitter<SessionEvents> {
   }
 
   private applyEvent(event: GameEvent): void {
+    const prevPhase = this.state.phase;
     this.eventLog.push(event);
     this.state = reduceGameEvent(this.state, event);
+    if (prevPhase !== "game-over" && this.state.phase === "game-over" && this.process?.isRunning()) {
+      this.process.kill();
+    }
     this.emit("game-event", event);
     this.emit("state-update", this.state);
   }

@@ -35,17 +35,23 @@ export const DeleteOutputMessageSchema = z.object({
   outputDir: z.string().min(1),
 });
 
+export const ReviveMessageSchema = z.object({
+  type: z.literal("revive"),
+});
+
 export const ClientToServerMessageSchema = z.discriminatedUnion("type", [
   StartQuestMessageSchema,
   PlayerChoiceMessageSchema,
   TacticMessageSchema,
   DeleteOutputMessageSchema,
+  ReviveMessageSchema,
 ]);
 
 export type StartQuestMessage = z.infer<typeof StartQuestMessageSchema>;
 export type PlayerChoiceMessage = z.infer<typeof PlayerChoiceMessageSchema>;
 export type TacticMessage = z.infer<typeof TacticMessageSchema>;
 export type DeleteOutputMessage = z.infer<typeof DeleteOutputMessageSchema>;
+export type ReviveMessage = z.infer<typeof ReviveMessageSchema>;
 export type ClientToServerMessage = z.infer<typeof ClientToServerMessageSchema>;
 
 export type ServerToClientMessage =

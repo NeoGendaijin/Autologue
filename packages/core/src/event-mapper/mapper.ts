@@ -265,7 +265,7 @@ export class EventMapper {
       events.push({
         type: "CONTEXT_UPDATE",
         used: inputTokens + outputTokens,
-        max: 1_000_000,
+        max: 100_000,
       });
     }
 

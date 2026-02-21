@@ -149,6 +149,64 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
 
 let prevQuestLog: unknown[] = [];
 let prevPhase = "idle";
+let lastActivityAt = 0; // timestamp of last real event
+let ambientTimer: ReturnType<typeof setInterval> | null = null;
+
+const AMBIENT_MESSAGES = [
+  "Agent analyzes the enemy...",
+  "Charging energy...",
+  "Preparing strategy...",
+  "Sensing weaknesses...",
+  "Agent focuses...",
+  "Building momentum...",
+  "Reading the battlefield...",
+  "Gathering mana...",
+  "Agent sharpens blade...",
+  "Eyes locked on target...",
+];
+
+const AMBIENT_EFFECTS = ["⚡", "✦", "◆", "▸", "☄", "✧"] as const;
+
+function startAmbientTimer() {
+  if (ambientTimer) return;
+  ambientTimer = setInterval(() => {
+    const gamePhase = useGameStore.getState().state.phase;
+    if (gamePhase !== "running") return;
+
+    const now = Date.now();
+    const sinceLast = now - lastActivityAt;
+    // Only fire if no real activity for at least 2.5s
+    if (sinceLast < 2500) return;
+
+    const battle = useBattleStore.getState();
+    const roll = Math.random();
+
+    if (roll < 0.4) {
+      // Charge-up attack with small damage
+      const dmg = 1 + Math.floor(Math.random() * 4);
+      battle.triggerAgentAttack();
+      battle.addDamageNumber(String(dmg), false, "#aaaaff");
+      battle.addBattleLog("Agent strikes while planning!");
+    } else if (roll < 0.7) {
+      // Ambient effect — floating symbol
+      const sym = AMBIENT_EFFECTS[Math.floor(Math.random() * AMBIENT_EFFECTS.length)];
+      battle.addDamageNumber(sym, false, "#8888cc");
+      const msg = AMBIENT_MESSAGES[Math.floor(Math.random() * AMBIENT_MESSAGES.length)];
+      battle.addBattleLog(msg);
+    } else {
+      // Just a battle log message
+      const msg = AMBIENT_MESSAGES[Math.floor(Math.random() * AMBIENT_MESSAGES.length)];
+      battle.addBattleLog(msg);
+    }
+  }, 2800);
+}
+
+function stopAmbientTimer() {
+  if (ambientTimer) {
+    clearInterval(ambientTimer);
+    ambientTimer = null;
+  }
+}
 
 useGameStore.subscribe((state) => {
   const battle = useBattleStore.getState();
@@ -159,32 +217,52 @@ useGameStore.subscribe((state) => {
   if (phase === "running" && prevPhase !== "running" && prevPhase !== "question") {
     battle.reset();
     battle.addBattleLog("The quest begins...");
+    lastActivityAt = Date.now();
+    startAmbientTimer();
   }
 
   // Quest complete — defeat last enemy
   if (phase === "complete" && prevPhase !== "complete") {
     battle.defeatCurrent();
     battle.addBattleLog("All enemies defeated! Victory!");
+    stopAmbientTimer();
   }
 
   // Game over
   if (phase === "game-over" && prevPhase !== "game-over") {
     battle.addBattleLog("Your party has fallen...");
+    stopAmbientTimer();
   }
 
   // Phase reset
   if (phase === "idle" && prevPhase !== "idle") {
     battle.reset();
+    stopAmbientTimer();
   }
 
   prevPhase = phase;
 
   // Process new log entries
   if (questLog.length > prevQuestLog.length) {
+    lastActivityAt = Date.now();
     const newEntries = questLog.slice(prevQuestLog.length);
     for (const entry of newEntries) {
       switch (entry.type) {
         case "action": {
+          // Thinking events — agent charges up
+          if (/^Thinking:/i.test(entry.text)) {
+            const snippet = entry.text.replace(/^Thinking:\s*/i, "").slice(0, 40);
+            // Spawn a "thought" encounter if none active
+            if (!battle.encounters.some((e) => e.status === "active")) {
+              battle.spawnEncounter(undefined, `Planning: ${snippet}`);
+            }
+            const dmg = 2 + Math.floor(Math.random() * 4);
+            battle.triggerAgentAttack();
+            battle.addDamageNumber(String(dmg), false, "#aaddff");
+            battle.addBattleLog(`Agent thinks... ${dmg} insight!`);
+            break;
+          }
+
           if (/^Writing\b/i.test(entry.text)) {
             // File write → new encounter
             battle.spawnEncounter("write_file", entry.text);

@@ -7,10 +7,11 @@ import "./battle-animations.css";
 import { StatusBar } from "./ui/StatusBar";
 import { BattleArena } from "./ui/BattleArena";
 import { DialogueBox } from "./ui/DialogueBox";
-import { CommandMenu } from "./ui/CommandMenu";
+import { CliLog } from "./ui/CliLog";
 import { PartyList } from "./ui/PartyList";
 import { GuildBoard } from "./ui/GuildBoard";
 import { VictoryScreen } from "./ui/VictoryScreen";
+import { GameOverScreen } from "./ui/GameOverScreen";
 
 import { COLORS } from "./theme";
 
@@ -84,12 +85,13 @@ export function App() {
       }}>
         <PartyList />
         <DialogueBox />
-        <CommandMenu />
+        <CliLog />
       </div>
 
       {/* Overlays */}
       {(phase === "idle" || phase === "quest-input") && <GuildBoard />}
       {phase === "complete" && <VictoryScreen />}
+      {phase === "game-over" && <GameOverScreen />}
     </div>
   );
 }

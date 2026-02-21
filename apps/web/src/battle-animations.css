@@ -81,6 +81,14 @@
   75% { transform: translateY(-2px) rotate(-0.5deg); }
 }
 
+/* Walking-like grounded bob */
+@keyframes walkStride {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  25% { transform: translateY(-2px) translateX(1px); }
+  50% { transform: translateY(0) translateX(0); }
+  75% { transform: translateY(-2px) translateX(-1px); }
+}
+
 /* Charge/thinking glow */
 @keyframes charge {
   0%, 100% { filter: brightness(1) drop-shadow(0 0 0 transparent); }

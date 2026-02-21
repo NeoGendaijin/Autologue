@@ -110,6 +110,17 @@ export class WsHandler {
         break;
       }
 
+      case "revive": {
+        const session = this.sessions.get(sessionId);
+        if (session) {
+          session.revive().catch((err) => {
+            const errorMsg = err instanceof Error ? err.message : "Revive failed";
+            this.send(ws, { type: "error", message: errorMsg });
+          });
+        }
+        break;
+      }
+
       case "delete-output": {
         try {
           const targetDir = this.resolveOutputTarget(message.outputDir);

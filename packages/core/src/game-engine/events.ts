@@ -96,7 +96,8 @@ export type GameEvent =
   | { type: "QUEST_COMPLETE"; result: QuestResult }
   | { type: "GAME_OVER"; reason: string }
   | { type: "TACTIC_USED"; tactic: TacticType; effect: string }
-  | { type: "LOG"; message: string; logType: LogType };
+  | { type: "LOG"; message: string; logType: LogType }
+  | { type: "REVIVE"; addedContext: number };
 
 // --- Quest Result ---
 
